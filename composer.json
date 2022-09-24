@@ -1,0 +1,22 @@
+{
+    "name": "mensbeam/catcher",
+    "description": "Catches exceptions, errors, and shutdowns",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Mensbeam\\Framework\\": "lib/",
+            "Mensbeam\\Framework\\Test\\": "test/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Dustin Wilson",
+            "email": "dustin@dustinwilson.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "psr/log": "^3.0"
+    }
+}
