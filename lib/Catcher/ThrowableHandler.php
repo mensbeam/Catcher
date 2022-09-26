@@ -10,7 +10,7 @@ namespace Mensbeam\Framework\Catcher;
 
 
 abstract class ThrowableHandler {
-    protected static ?string $contentType = null;
+    public const CONTENT_TYPE = null;
 
     /** If true the handler will output data; if false it will be silent */
     protected bool $_output = true;
@@ -20,6 +20,12 @@ abstract class ThrowableHandler {
      * next handler if it successfully handles the throwable 
      */
     protected bool $_passthrough = false;
+    /** 
+     * The result of the handler's processing of the throwable; most of the time this 
+     * will be a string, but in some cases like the HTMLHandler it's a 
+     * DOMDocumentFragment so it may be further manipulated 
+     */
+    protected mixed $_result = null;
 
 
 
@@ -32,11 +38,7 @@ abstract class ThrowableHandler {
     }
 
 
-
     
-    public function getContentType(): ?string {
-        return static::$contentType;
-    }
 
     public function getOutput(): bool {
         return $this->_output;
@@ -44,6 +46,10 @@ abstract class ThrowableHandler {
 
     public function getPassthrough(): bool {
         return $this->_passthrough;
+    }
+
+    public function getResult(): mixed {
+        return $this->_result;
     }
 
     abstract public function handle(\Throwable $throwable, ThrowableController $controller): bool;
@@ -61,6 +67,6 @@ abstract class ThrowableHandler {
             return;
         }
 
-        header('Content-Type: ' . static::$contentType);
+        header('Content-Type: ' . static::CONTENT_TYPE);
     }
 }

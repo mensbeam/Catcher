@@ -14,7 +14,7 @@ use \Psr\Log\{
 
 
 class PlainTextHandler extends ThrowableHandler implements LoggerAwareInterface {
-    protected static ?string $contentType = 'text/plain';
+    public const CONTENT_TYPE = 'text/plain';
 
     /** The number of backtrace frames in which to print arguments; defaults to 5 */
     protected int $_backtraceArgFrameLimit = 5;

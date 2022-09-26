@@ -80,7 +80,12 @@ class Catcher {
             }
         }
 
-        if ($this->isShuttingDown || $throwable instanceof \Exception || in_array($throwable->getCode(), [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_COMPILE_ERROR, \E_USER_ERROR ])) {
+        if (
+            self::isHTTPRequest() ||
+            $this->isShuttingDown || 
+            $throwable instanceof \Exception || 
+            in_array($throwable->getCode(), [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_COMPILE_ERROR, \E_USER_ERROR ])
+        ) {
             exit($throwable->getCode());
         }
     }
@@ -97,5 +102,9 @@ class Catcher {
         if ($error && in_array($error['type'], [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_CORE_WARNING, \E_COMPILE_ERROR, \E_COMPILE_WARNING ])) {
             $this->handleError($error['type'], $error['message'], $error['file'], $error['line']);
         }
+    }
+
+    public static function isHTTPRequest() {
+        return (\PHP_SAPI !== 'cli' && isset($_SERVER['REQUEST_URI']) && isset($_SERVER['REQUEST_METHOD']));
     }
 }
