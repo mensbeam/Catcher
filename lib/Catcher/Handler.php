@@ -6,46 +6,87 @@
  */
 
 declare(strict_types=1);
-namespace Mensbeam\Framework\Catcher;
+namespace MensBeam\Framework\Catcher;
 
 
 abstract class Handler {
     public const CONTENT_TYPE = null;
 
+    // Control constants
     public const CONTINUE = 1;
     public const BREAK = 2;
     public const EXIT = 4;
+
+    // Output constants
     public const OUTPUT = 16;
     public const OUTPUT_NOW = 32;
     public const SILENT = 64;
 
 
     protected ThrowableController $controller;
-    protected array $data;
-    /** The handler's result (bitmask) */
-    protected int $outputCode;
 
     /** 
-     * If true the handler will break the handler stack and won't continue onto the 
-     * next handler regardless 
+     * Array of HandlerOutputs the handler creates
+     * 
+     * @var HandlerOutput[] 
      */
-    protected static bool $_forceBreak = false;
+    protected array $outputBuffer = [];
+    /** 
+     * Array of option property names; used when overloading
+     * 
+     * @var string[] 
+     */
+    protected array $optionNames;
+
+    /** The number of backtrace frames in which to print arguments; defaults to 5 */
+    protected int $_backtraceArgFrameLimit = 5;
+    /** 
+     * The character encoding used for errors; only used if headers weren't sent before 
+     * an error occurred 
+     */
+    protected string $_charset = 'UTF-8';
     /** If true the handler will continue onto the next handler regardless */
-    protected static bool $_forceContinue = false;
+    protected bool $_forceContinue = false;
     /** If true the handler will force an exit */
-    protected static bool $_forceExit = false;
+    protected bool $_forceExit = false;
     /** 
      * If true the handler will output as soon as possible; however, if silent 
      * is true the handler will output nothing 
      */
-    protected static bool $_forceOutputNow = false;
+    protected bool $_forceOutputNow = false;
+    /** The HTTP code to be sent */
+    protected int $_httpCode = 500;
+    /** If true the handler will output backtraces; defaults to false */
+    protected bool $_outputBacktrace = false;
+    /** If true the handler will output previous throwables; defaults to true */
+    protected bool $_outputPrevious = true;
     /** If true the handler will be silent and won't output */
-    protected static bool $_silent = false;
+    protected bool $_silent = false;
 
 
 
 
-    protected function __construct(ThrowableController $controller, array $data = []) {
+    public function __construct(array $options = []) {
+        foreach ($options as $key => $value) {
+            $key = "_$key";
+            if ($key === '_httpCode' && is_int($value) && ($value < 400 || $value >= 600)) {
+                throw new \InvalidArgumentException('Option "httpCode" can only be an integer between 400 and 599');
+            }
+
+            $this->$key = $value;
+        }
+
+        $properties = (new \ReflectionClass($this))->getProperties(\ReflectionProperty::IS_PROTECTED);
+        $this->optionNames = [];
+        foreach ($properties as $p) {
+            $name = $p->getName();
+            if ($name[0] === '_') {
+                $this->optionNames[] = $name;
+            }
+        }
+    }
+
+    /*protected function __construct(ThrowableController $controller, array $data = []) {
         $this->controller = $controller;
         $this->data = $data;
 
@@ -73,30 +114,80 @@ abstract class Handler {
 
         $this->outputCode |= ($this->outputCode === self::SILENT) ? self::CONTINUE : self::BREAK;
         return;
-    }
+    }*/
 
 
-
-
-    public static function config(array $config = []) {
-        foreach ($config as $key => $value) {
-            $key = "_$key";
-            self::$$key = $value;
+    public function dispatch(): void {
+        if (count($this->outputBuffer) === 0) {
+            return;
         }
 
-        return __CLASS__;
+        // Send the headers if possible and necessary
+        if (isset($_SERVER['REQUEST_URI'])) {
+            if (!headers_sent()) {
+                header_remove('location');
+                header(sprintf('Content-type: %s; charset=%s', static::CONTENT_TYPE, $this->_charset));
+            }
+            http_response_code($this->_httpCode);
+        }
+
+        $this->dispatchCallback();
+        $this->outputBuffer = [];
     }
 
-    abstract public static function create(ThrowableController $controller): self;
-
-
-    public function getOutputCode(): int {
-        return $this->outputCode;
+    public function handle(ThrowableController $controller): HandlerOutput {
+        $output = $this->handleCallback($controller);
+        $this->outputBuffer[] = $output;
+        return $output;
     }
 
-    public function getThrowable(): \Throwable {
-        return $this->throwable;
+
+    abstract protected function dispatchCallback(): void;
+
+
+    /*protected function createOutput(mixed $output): HandlerOutput {
+        return new HandlerOutput($this->getControlCode(), $this->getOutputCode(), $output);
+    }*/
+
+    protected function getControlCode(): int {
+        $code = self::BREAK;
+        if ($this->_forceExit) {
+            $code = self::EXIT;
+        } elseif ($this->_forceContinue) {
+            $code = self::CONTINUE;
+        }
+        
+        return $code;
     }
 
-    abstract public function output(): void;
+    protected function getOutputCode(): int {
+        $code = self::OUTPUT;
+        if ($this->_silent) {
+            $code = self::SILENT;
+            if ($this->_forceOutputNow) {
+                $code |= self::OUTPUT_NOW;
+            }
+        } elseif ($this->_forceOutputNow) {
+            $code = self::OUTPUT_NOW;
+        }
+
+        return $code;
+    }
+
+    abstract protected function handleCallback(ThrowableController $controller): HandlerOutput;
+
+
+    /*public function __get(string $name): mixed {
+        $name = "_$name";
+        if (in_array($name, $this->optionNames)) {
+            return $this->$name;
+        }
+    }
+
+    public function __set(string $name, mixed $value): void {
+        $name = "_$name";
+        if (in_array($name, $this->optionNames)) {
+            $this->$name = $value;
+        }
+    }*/
 }

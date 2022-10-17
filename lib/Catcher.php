@@ -6,8 +6,8 @@
  */
 
 declare(strict_types=1);
-namespace Mensbeam\Framework;
-use Mensbeam\Framework\Catcher\{
+namespace MensBeam\Framework;
+use MensBeam\Framework\Catcher\{
     ThrowableController,
     Handler
 };
@@ -20,18 +20,14 @@ class Catcher {
      * @var Handler[] 
      */
     protected array $handlers = [];
-    protected array $handlerClasses = [];
     /** Flag set when the shutdown handler is run */
     protected bool $isShuttingDown = false;
 
-    protected Map $results;
 
 
 
-
-    public function __construct(string ...$handlerClasses) {
-        $this->handlerClasses = $handlerClasses;
-        $this->results = new Map();
+    public function __construct(Handler ...$handlers) {
+        $this->handlers = $handlers;
 
         set_error_handler([ $this, 'handleError' ]);
         set_exception_handler([ $this, 'handleThrowable' ]);
@@ -69,30 +65,29 @@ class Catcher {
      */
     public function handleThrowable(\Throwable $throwable): void {
         $controller = new ThrowableController($throwable);
-        foreach ($this->handlerClasses as $h) {
-            $handler = $h::create($controller);
-            $code = $handler->getOutputCode();
-
-            if ($code & Handler::OUTPUT_NOW) {
-                $handler->output();
-            } else {
-                $this->handlers[] = $handler;
+        foreach ($this->handlers as $h) {
+            $output = $h->handle($controller);
+            if ($output->outputCode & Handler::OUTPUT_NOW) {
+                $h->dispatch();
             }
 
-            if ($code & Handler::CONTINUE) {
+            $controlCode = $output->controlCode;
+            if ($controlCode !== Handler::CONTINUE) {
                 break;
             }
         }
 
-        /*if ($this->isShuttingDown || $throwable instanceof \Exception || in_array($throwable->getCode(), [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_COMPILE_ERROR, \E_USER_ERROR ]) {
-
-        }*/
-
         if (
-            $this->isShuttingDown || 
             $throwable instanceof \Exception || 
-            in_array($throwable->getCode(), [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_COMPILE_ERROR, \E_USER_ERROR ])
+            ($throwable instanceof Error && in_array($throwable->getCode(), [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_COMPILE_ERROR, \E_USER_ERROR ])) ||
+            $throwable instanceof \Error
         ) {
+            foreach ($this->handlers as $h) {
+                $h->dispatch();
+            }
+
+            exit($throwable->getCode());
+        } elseif ($controlCode === Handler::EXIT) {
             exit($throwable->getCode());
         }
     }
@@ -104,8 +99,10 @@ class Catcher {
      */
     public function handleShutdown() {
         $this->isShuttingDown = true;
-        if (error_get_last() && in_array($error['type'], [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_CORE_WARNING, \E_COMPILE_ERROR, \E_COMPILE_WARNING ])) {
-            $this->handleError($error['type'], $error['message'], $error['file'], $error['line']);
+        if ($error = error_get_last()) {
+            if (in_array($error['type'], [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_CORE_WARNING, \E_COMPILE_ERROR, \E_COMPILE_WARNING ])) {
+                $this->handleError($error['type'], $error['message'], $error['file'], $error['line']);
+            }
         }
     }
 

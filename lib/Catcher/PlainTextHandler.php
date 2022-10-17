@@ -6,151 +6,68 @@
  */
 
 declare(strict_types=1);
-namespace Mensbeam\Framework\Catcher;
-use \Psr\Log\{
-    LoggerAwareInterface,
-    LoggerInterface
-};
+namespace MensBeam\Framework\Catcher;
+use \Psr\Log\LoggerInterface;
 
 
-class PlainTextHandler extends Handler implements LoggerAwareInterface {
+class PlainTextHandler extends Handler {
     public const CONTENT_TYPE = 'text/plain';
 
-    /** The number of backtrace frames in which to print arguments; defaults to 5 */
-    protected static int $_backtraceArgFrameLimit = 5;
     /** The PSR-3 compatible logger in which to log to; defaults to null (no logging) */
-    protected static ?LoggerInterface $_logger = null;
-    /** If true the handler will output backtraces; defaults to false */
-    protected static bool $_outputBacktrace = false;
-    /** If true the handler will output previous throwables; defaults to true */
-    protected static bool $_outputPrevious = true;
-    /** 
-     * If true the handler will output times to the output. This is ignored by the 
-     * logger which should have its own timestamping methods; defaults to true 
-     */
-    protected static bool $_outputTime = true;
-    /** The PHP-standard date format which to use for times printed to output */
-    protected static string $_timeFormat = '[H:i:s]';
+    protected ?LoggerInterface $_logger = null;
+    /** If true the handler will output times to the output; defaults to true */
+    protected bool $_outputTime = true;
+    /** The PHP-standard date format which to use for timestamps in output */
+    protected string $_timeFormat = '[H:i:s]';
 
 
-    public static function create(ThrowableController $controller): self {
-        $message = null;
-        if (self::$_logger !== null) {
-            $message = self::serialize($controller);
-            self::$log($controller->getThrowable(), $message);
-        }
-
-        return new self(
-            controller: $controller,
-            data: [ 'message' => $message ]
-        );
-    }
-
-    public function output(): void {
-        $message = $this->data['message'] ?? self::serialize($this->controller);
-        if (self::$_outputTime && self::$_timeFormat !== '') {
-            $time = (new \DateTime())->format(self::$_timeFormat) . '  ';
-            $timeStrlen = strlen($time);
-
-            $message = preg_replace('/^/m', str_repeat(' ', $timeStrlen), $message);
-            $message = preg_replace('/^ {' . $timeStrlen . '}/', $time, $message);
-        }
-
-
-        if (!Catcher::isHTTPRequest()) {
-            fprintf(\STDERR, "$message\n");
-        } else {
-            echo "$message\n";
-        }
-    }
-
-    public function getOutputCode(): int {
-        if ($this->outputCode !== null) {
-            return $this->outputCode;
-        }
-
-        $code = parent::getOutputCode();
-        // When the sapi is CLI we want to output as soon as possible if 
-        $this->outputCode = ($code & self::OUTPUT === 0 && \PHP_SAPI === 'CLI') ? $code &~ self::OUTPUT | self::OUTPUT_NOW : $code;
-        return $this->outputCode;
-    }
-
-
-    protected static function log(\Throwable $throwable, string $message): void {
-        if ($throwable instanceof \Error) {
-            switch ($throwable->getCode()) {
-                case \E_NOTICE:
-                case \E_USER_NOTICE:
-                case \E_STRICT:
-                    self::$_logger->notice($message);
-                break;
-                case \E_WARNING:
-                case \E_COMPILE_WARNING:
-                case \E_USER_WARNING:
-                case \E_DEPRECATED:
-                case \E_USER_DEPRECATED:
-                    self::$_logger->warning($message);
-                break;
-                case \E_RECOVERABLE_ERROR:
-                    self::$_logger->error($message);
-                break;
-                case \E_PARSE:
-                case \E_CORE_ERROR:
-                case \E_COMPILE_ERROR:
-                    self::$_logger->alert($message);
-                break;
+    protected function dispatchCallback(): void {
+        foreach ($this->outputBuffer as $o) {
+            if ($o->outputCode & self::SILENT) {
+                continue;
             }
-        } elseif ($throwable instanceof \Exception) {
-            if ($throwable instanceof \PharException || $throwable instanceof \RuntimeException) {
-                self::$_logger->alert($message);
+
+            if (\PHP_SAPI === 'CLI') {
+                fprintf(\STDERR, "{$o->output}\n");
+            } else {
+                echo "{$o->output}\n";
             }
-        } else {
-            self::$_logger->critical($message);
         }
     }
 
-    protected function prependTimestamps(string $message): string {
-        $time = (new \DateTime())->format(self::$_timeFormat) . '  ';
-        $timeStrlen = strlen($time);
-
-        $message = preg_replace('/^/m', str_repeat(' ', $timeStrlen), $message);
-        return preg_replace('/^ {' . $timeStrlen . '}/', $time, $message);
-    }
-
-    protected static function serialize(ThrowableController $controller): string {
-        $message = self::$serializeThrowable($controller);
-        if (self::$_outputPrevious) {
-            $prev = $throwable->getPrevious();
+    protected function handleCallback(ThrowableController $controller): HandlerOutput {
+        $output = $this->serializeThrowable($controller);
+        if ($this->_outputPrevious) {
             $prevController = $controller->getPrevious();
-            while ($prev) {
-                $message .= sprintf("\n\nCaused by ↴\n%s", self::$serializeThrowable($prev, $prevController));
-                $prev = $prev->getPrevious();
+            while ($prevController) {
+                $output .= sprintf("\n\nCaused by ↴\n%s", $this->serializeThrowable($prevController));
                 $prevController = $prevController->getPrevious();
             }
         }
 
-        if (self::$_outputBacktrace) {
+        if ($this->_outputBacktrace) {
             $frames = $controller->getFrames();
-            $message .= "\nStack trace:";
+            $output .= "\nStack trace:";
 
             $num = 1;
+            $maxDigits = strlen((string)count($frames));
             foreach ($frames as $frame) {
                 $class = (!empty($frame['error'])) ? "{$frame['error']} ({$frame['class']})" : $frame['class'] ?? '';
                 $function = $frame['function'] ?? '';
 
                 $args = '';
-                if (!empty($frame['args']) && self::$_backtraceArgFrameLimit >= $num) {
-                    $args = "\n" . preg_replace('/^/m', str_repeat(' ', strlen((string)$num) + 2) . '| ', var_export($frame['args'], true));
+                if (!empty($frame['args']) && $this->_backtraceArgFrameLimit >= $num) {
+                    $args = "\n" . preg_replace('/^/m', str_repeat(' ', $maxDigits) . '| ', var_export($frame['args'], true));
                 }
 
-                $template = "\n%3d. %s";
+                $template = "\n%{$maxDigits}d. %s";
                 if ($class && $function) {
                     $template .= '::';
                 }
                 $template .= ($function) ? '%s()' : '%s';
                 $template .= '  %s:%d%s';
 
-                $message .= sprintf(
+                $output .= sprintf(
                     "$template\n",
                     $num++,
                     $class,
@@ -159,17 +76,68 @@ class PlainTextHandler extends Handler implements LoggerAwareInterface {
                     $frame['line'],
                     $args
                 );
+
+                die($output);
             }
         }
 
-        return $message;
+        // The logger will handle timestamps itself.
+        if ($this->_logger !== null) {
+            $this->log($controller->getThrowable(), $message);
+        }
+
+        if (!$this->_silent && $this->_outputTime && $this->_timeFormat !== '') {
+            $time = (new \DateTime())->format($this->_timeFormat) . '  ';
+            $timeStrlen = strlen($time);
+
+            $output = preg_replace('/^/m', str_repeat(' ', $timeStrlen), $output);
+            $output = preg_replace('/^ {' . $timeStrlen . '}/', $time, $output);
+        }
+
+        $outputCode = $this->getOutputCode();
+        return new HandlerOutput($this->getControlCode(), ($outputCode === self::OUTPUT && \PHP_SAPI === 'CLI') ? self::OUTPUT_NOW : $outputCode, $output);
     }
 
-    protected static function serializeThrowable(ThrowableController $controller): string {
+
+
+    protected function log(\Throwable $throwable, string $message): void {
+        if ($throwable instanceof \Error) {
+            switch ($throwable->getCode()) {
+                case \E_NOTICE:
+                case \E_USER_NOTICE:
+                case \E_STRICT:
+                    $this->_logger->notice($message);
+                break;
+                case \E_WARNING:
+                case \E_COMPILE_WARNING:
+                case \E_USER_WARNING:
+                case \E_DEPRECATED:
+                case \E_USER_DEPRECATED:
+                    $this->_logger->warning($message);
+                break;
+                case \E_RECOVERABLE_ERROR:
+                    $this->_logger->error($message);
+                break;
+                case \E_PARSE:
+                case \E_CORE_ERROR:
+                case \E_COMPILE_ERROR:
+                    $this->_logger->alert($message);
+                break;
+                default: $this->_logger->critical($message);
+            }
+        } elseif ($throwable instanceof \Exception && ($throwable instanceof \PharException || $throwable instanceof \RuntimeException)) {
+            $this->_logger->alert($message);
+        } else {
+            $this->_logger->critical($message);
+        }
+    }
+
+    protected function serializeThrowable(ThrowableController $controller): string {
         $throwable = $controller->getThrowable();
         $class = $throwable::class;
-        if ($throwable instanceof \Error) {
+        if ($throwable instanceof Error) {
             $type = $controller->getErrorType();
+            $type = ($throwable instanceof Error) ? $controller->getErrorType() : null;
             $class = ($type !== null) ? "$type (" . $throwable::class . ")" : $throwable::class;
         }
 

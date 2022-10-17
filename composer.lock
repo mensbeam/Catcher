@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8998cce6e05b3ccc6aca7c736416f570",
+    "content-hash": "e8aa70aef9ba115203828355980ff484",
     "packages": [
         {
             "name": "psr/log",
@@ -57,7 +57,491 @@
             "time": "2021-07-14T16:46:02+00:00"
         }
     ],
-    "packages-dev": [],
+    "packages-dev": [
+        {
+            "name": "mensbeam/framework",
+            "version": "1.0.5",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/mensbeam/Framework.git",
+                "reference": "af4b8e72d50c01cf78d3d1b12b5a65f714f9d73b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/mensbeam/Framework/zipball/af4b8e72d50c01cf78d3d1b12b5a65f714f9d73b",
+                "reference": "af4b8e72d50c01cf78d3d1b12b5a65f714f9d73b",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.4"
+            },
+            "require-dev": {
+                "bamarni/composer-bin-plugin": "^1.3"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "MensBeam\\Framework\\": [
+                        "lib/"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Dustin Wilson",
+                    "email": "dustin@dustinwilson.com",
+                    "homepage": "https://dustinwilson.com/"
+                }
+            ],
+            "description": "Common classes and traits used in many MensBeam projects",
+            "support": {
+                "issues": "https://github.com/mensbeam/Framework/issues",
+                "source": "https://github.com/mensbeam/Framework/tree/1.0.5"
+            },
+            "time": "2022-01-05T16:09:09+00:00"
+        },
+        {
+            "name": "mensbeam/html-dom",
+            "version": "1.0.8",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/mensbeam/HTML-DOM.git",
+                "reference": "8a9f0e18b2bc14dc6e451690be9ff0aeeb428496"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/mensbeam/HTML-DOM/zipball/8a9f0e18b2bc14dc6e451690be9ff0aeeb428496",
+                "reference": "8a9f0e18b2bc14dc6e451690be9ff0aeeb428496",
+                "shasum": ""
+            },
+            "require": {
+                "ext-dom": "*",
+                "mensbeam/framework": "^1.0.4",
+                "mensbeam/html-parser": "^1.2.1",
+                "php": ">=8.0.2",
+                "symfony/css-selector": "^5.3"
+            },
+            "require-dev": {
+                "bamarni/composer-bin-plugin": "^1.3",
+                "mikey179/vfsstream": "^1.6",
+                "nikic/php-parser": "^4.13"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "MensBeam\\HTML\\DOM\\": [
+                        "lib/",
+                        "lib/HTMLElement"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Dustin Wilson",
+                    "email": "dustin@dustinwilson.com",
+                    "homepage": "https://dustinwilson.com/"
+                },
+                {
+                    "name": "J. King",
+                    "email": "jking@jkingweb.ca",
+                    "homepage": "https://jkingweb.ca/"
+                }
+            ],
+            "description": "Modern DOM library written in PHP for HTML documents",
+            "support": {
+                "issues": "https://github.com/mensbeam/HTML-DOM/issues",
+                "source": "https://github.com/mensbeam/HTML-DOM/tree/1.0.8"
+            },
+            "time": "2022-02-12T15:46:39+00:00"
+        },
+        {
+            "name": "mensbeam/html-parser",
+            "version": "1.2.5",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/mensbeam/HTML-Parser.git",
+                "reference": "02ec5df3fe985b3b6635c0cfd37df10ccd023e4c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/mensbeam/HTML-Parser/zipball/02ec5df3fe985b3b6635c0cfd37df10ccd023e4c",
+                "reference": "02ec5df3fe985b3b6635c0cfd37df10ccd023e4c",
+                "shasum": ""
+            },
+            "require": {
+                "ext-dom": "*",
+                "mensbeam/intl": ">=0.9.1",
+                "mensbeam/mimesniff": ">=0.2.0",
+                "php": ">=7.1"
+            },
+            "require-dev": {
+                "bamarni/composer-bin-plugin": "^1.3"
+            },
+            "suggest": {
+                "ext-ctype": "Improved performance"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "lib/Parser/ctype.php"
+                ],
+                "psr-4": {
+                    "MensBeam\\HTML\\": [
+                        "lib/"
+                    ]
+                },
+                "classmap": [
+                    "lib/Parser/Token.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Dustin Wilson",
+                    "email": "dustin@dustinwilson.com",
+                    "homepage": "https://dustinwilson.com/"
+                },
+                {
+                    "name": "J. King",
+                    "email": "jking@jkingweb.ca",
+                    "homepage": "https://jkingweb.ca/"
+                }
+            ],
+            "description": "Parser and serializer for modern HTML documents",
+            "keywords": [
+                "HTML5",
+                "WHATWG",
+                "dom",
+                "html",
+                "parser",
+                "parsing"
+            ],
+            "support": {
+                "issues": "https://github.com/mensbeam/HTML-Parser/issues",
+                "source": "https://github.com/mensbeam/HTML-Parser/tree/1.2.5"
+            },
+            "time": "2022-02-15T20:47:49+00:00"
+        },
+        {
+            "name": "mensbeam/intl",
+            "version": "0.9.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/mensbeam/intl.git",
+                "reference": "07d26e3f45c3a3167eb6389572419d3bda7ff5e1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/mensbeam/intl/zipball/07d26e3f45c3a3167eb6389572419d3bda7ff5e1",
+                "reference": "07d26e3f45c3a3167eb6389572419d3bda7ff5e1",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1"
+            },
+            "require-dev": {
+                "bamarni/composer-bin-plugin": "*",
+                "ext-intl": "*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "MensBeam\\Intl\\": "lib/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "J. King",
+                    "email": "jking@jkingweb.ca",
+                    "homepage": "https://jkingweb.ca/"
+                }
+            ],
+            "description": "A set of dependency-free basic internationalization tools",
+            "keywords": [
+                "WHATWG",
+                "charset",
+                "encoding",
+                "internationalization",
+                "intl",
+                "unicode",
+                "utf-8",
+                "utf8"
+            ],
+            "support": {
+                "issues": "https://github.com/mensbeam/intl/issues",
+                "source": "https://github.com/mensbeam/intl/tree/0.9.1"
+            },
+            "time": "2021-10-24T14:37:46+00:00"
+        },
+        {
+            "name": "mensbeam/mimesniff",
+            "version": "0.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/mensbeam/mime.git",
+                "reference": "c19be2496ab1e27fbf9c3483c2a9faa2781796cd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/mensbeam/mime/zipball/c19be2496ab1e27fbf9c3483c2a9faa2781796cd",
+                "reference": "c19be2496ab1e27fbf9c3483c2a9faa2781796cd",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1",
+                "psr/http-message": "^1.0"
+            },
+            "require-dev": {
+                "bamarni/composer-bin-plugin": "^1.3",
+                "ext-intl": "*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "MensBeam\\Mime\\": "lib/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "J. King",
+                    "email": "jking@jkingweb.ca",
+                    "homepage": "https://jkingweb.ca/"
+                }
+            ],
+            "description": "An implementation of the WHATWG MIME Sniffing specification",
+            "keywords": [
+                "WHATWG",
+                "mime",
+                "mimesniff"
+            ],
+            "support": {
+                "issues": "https://github.com/mensbeam/mime/issues",
+                "source": "https://github.com/mensbeam/mime/tree/0.2.1"
+            },
+            "time": "2021-03-07T03:58:00+00:00"
+        },
+        {
+            "name": "psr/http-message",
+            "version": "1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/http-message.git",
+                "reference": "f6561bf28d520154e4b0ec72be95418abe6d9363"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/http-message/zipball/f6561bf28d520154e4b0ec72be95418abe6d9363",
+                "reference": "f6561bf28d520154e4b0ec72be95418abe6d9363",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Psr\\Http\\Message\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "http://www.php-fig.org/"
+                }
+            ],
+            "description": "Common interface for HTTP messages",
+            "homepage": "https://github.com/php-fig/http-message",
+            "keywords": [
+                "http",
+                "http-message",
+                "psr",
+                "psr-7",
+                "request",
+                "response"
+            ],
+            "support": {
+                "source": "https://github.com/php-fig/http-message/tree/master"
+            },
+            "time": "2016-08-06T14:39:51+00:00"
+        },
+        {
+            "name": "symfony/css-selector",
+            "version": "v5.4.11",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/css-selector.git",
+                "reference": "c1681789f059ab756001052164726ae88512ae3d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/css-selector/zipball/c1681789f059ab756001052164726ae88512ae3d",
+                "reference": "c1681789f059ab756001052164726ae88512ae3d",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2.5",
+                "symfony/polyfill-php80": "^1.16"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Component\\CssSelector\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                },
+                {
+                    "name": "Jean-François Simon",
+                    "email": "jeanfrancois.simon@sensiolabs.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Converts CSS selectors to XPath expressions",
+            "homepage": "https://symfony.com",
+            "support": {
+                "source": "https://github.com/symfony/css-selector/tree/v5.4.11"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2022-06-27T16:58:25+00:00"
+        },
+        {
+            "name": "symfony/polyfill-php80",
+            "version": "v1.26.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/polyfill-php80.git",
+                "reference": "cfa0ae98841b9e461207c13ab093d76b0fa7bace"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/polyfill-php80/zipball/cfa0ae98841b9e461207c13ab093d76b0fa7bace",
+                "reference": "cfa0ae98841b9e461207c13ab093d76b0fa7bace",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "1.26-dev"
+                },
+                "thanks": {
+                    "name": "symfony/polyfill",
+                    "url": "https://github.com/symfony/polyfill"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "bootstrap.php"
+                ],
+                "psr-4": {
+                    "Symfony\\Polyfill\\Php80\\": ""
+                },
+                "classmap": [
+                    "Resources/stubs"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ion Bazan",
+                    "email": "ion.bazan@gmail.com"
+                },
+                {
+                    "name": "Nicolas Grekas",
+                    "email": "p@tchwork.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony polyfill backporting some PHP 8.0+ features to lower PHP versions",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "compatibility",
+                "polyfill",
+                "portable",
+                "shim"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/polyfill-php80/tree/v1.26.0"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2022-05-10T07:21:04+00:00"
+        }
+    ],
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": [],

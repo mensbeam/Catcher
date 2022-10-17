@@ -6,7 +6,7 @@
  */
 
 declare(strict_types=1);
-namespace Mensbeam\Framework;
+namespace MensBeam\Framework;
 
 class Error extends \Error {
     public function __construct(string $message = '', int $code = 0, ?string $file = null, ?int $line = line, ?\Throwable $previous = null) {

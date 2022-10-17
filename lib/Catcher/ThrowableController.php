@@ -6,7 +6,7 @@
  */
 
 declare(strict_types=1);
-namespace Mensbeam\Framework\Catcher;
+namespace MensBeam\Framework\Catcher;
 
 
 class ThrowableController {
@@ -31,7 +31,7 @@ class ThrowableController {
             return $this->errorType;
         }
 
-        if (!$this->throwable instanceof \Error) {
+        if (!$this->throwable instanceof Error) {
             $this->errorType = null;
             return null;
         }
