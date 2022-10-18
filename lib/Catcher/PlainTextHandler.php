@@ -27,11 +27,7 @@ class PlainTextHandler extends Handler {
                 continue;
             }
 
-            if (\PHP_SAPI === 'CLI') {
-                fprintf(\STDERR, "{$o->output}\n");
-            } else {
-                echo "{$o->output}\n";
-            }
+            $this->print($o->output);
         }
     }
 
@@ -76,8 +72,6 @@ class PlainTextHandler extends Handler {
                     $frame['line'],
                     $args
                 );
-
-                die($output);
             }
         }
 

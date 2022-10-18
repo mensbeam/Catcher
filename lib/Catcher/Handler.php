@@ -176,6 +176,13 @@ abstract class Handler {
 
     abstract protected function handleCallback(ThrowableController $controller): HandlerOutput;
 
+    protected function print(string $string): void {
+        if (strtolower(\PHP_SAPI) === 'cli') {
+            fprintf(\STDERR, "$string\n");
+        } else {
+            echo $string;
+        }
+    }
 
     /*public function __get(string $name): mixed {
         $name = "_$name";

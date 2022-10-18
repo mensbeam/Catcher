@@ -105,8 +105,4 @@ class Catcher {
             }
         }
     }
-
-    public static function isHTTPRequest() {
-        return (\PHP_SAPI !== 'cli' && isset($_SERVER['REQUEST_URI']) && isset($_SERVER['REQUEST_METHOD']));
-    }
 }

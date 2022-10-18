@@ -13,7 +13,6 @@ class HTMLHandler extends Handler {
     public const CONTENT_TYPE = 'text/html';
 
     protected ?\DOMDocument $_document = null;
-    protected static array $bullshit = [];
     /** If true the handler will output times to the output; defaults to true */
     protected bool $_outputTime = true;
     /** The PHP-standard date format which to use for times printed to output */
@@ -85,12 +84,7 @@ class HTMLHandler extends Handler {
             $body->appendChild($o->output);
         }
 
-        $output = $this->_document->saveHTML();
-        if (\PHP_SAPI === 'CLI') {
-            fprintf(\STDERR, "$output\n");
-        } else {
-            echo $output;
-        }
+        $this->print($this->_document->saveHTML());
     }
 
     protected function handleCallback(ThrowableController $controller): HandlerOutput {
@@ -126,7 +120,7 @@ class HTMLHandler extends Handler {
 
             if (count($frames) > 0) {
                 $ol = $this->_document->createElement('ol');
-                $p->appendChild($ol);
+                $frag->appendChild($ol);
                 $num = 1;
                 foreach ($frames as $frame) {
                     $li = $this->_document->createElement('li');
