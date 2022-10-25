@@ -23,6 +23,7 @@
         "ext-dom": "For HTMLHandler"
     },
     "require-dev": {
-        "mensbeam/html-dom": "^1.0"
+        "mensbeam/html-dom": "^1.0",
+        "phpunit/phpunit": "^9.5"
     }
 }

@@ -8,8 +8,9 @@
 declare(strict_types=1);
 namespace MensBeam\Framework;
 use MensBeam\Framework\Catcher\{
+    Handler,
+    PlainTextHandler,
     ThrowableController,
-    Handler
 };
 
 
@@ -27,7 +28,11 @@ class Catcher {
 
 
     public function __construct(Handler ...$handlers) {
-        $this->handlers = $handlers;
+        if (count($handlers) === 0) {
+            $handlers = [ new PlainTextHandler() ];
+        }
+
+        $this->pushHandler(...$handlers);
 
         set_error_handler([ $this, 'handleError' ]);
         set_exception_handler([ $this, 'handleThrowable' ]);
@@ -35,6 +40,60 @@ class Catcher {
     }
 
 
+
+    public function getHandlers(): array {
+        return $this->handlers;
+    }
+
+    public function pushHandler(Handler ...$handlers): void {
+        foreach ($handlers as $h) {
+            if (in_array($h, $this->handlers, true)) {
+                trigger_error("Handlers must be unique; skipping\n", \E_USER_WARNING);
+                continue;
+            }
+
+            $this->handlers[] = $h;
+        }
+    }
+
+    public function removeHandler(Handler ...$handlers): void {
+        foreach ($handlers as $h) {
+            foreach ($this->handlers as $k => $hh) {
+                if ($h === $hh) {
+                    if (count($this->handlers) === 1) {
+                        throw new \Exception("Removing handler will cause the Catcher to have zero handlers; there must be at least one\n");
+                    }
+
+                    unset($this->handlers[$k]);
+                    $this->handlers = array_values($this->handlers);
+                    continue 2;
+                }
+            }
+        }
+    }
+
+    public function setHandlers(Handler ...$handlers): void {
+        $this->handlers = [];
+        $this->pushHandler(...$handlers);
+    }
+
+    public function unshiftHandler(Handler ...$handlers): void {
+        $modified = false;
+        foreach ($handlers as $v => $h) {
+            if (in_array($h, $this->handlers, true)) {
+                trigger_error("Handlers must be unique; skipping\n", \E_USER_WARNING);
+                continue;
+            }
+
+            unset($handlers[$v]);
+            $modified = true;
+        }
+        if ($modified) {
+            $handlers = array_values($handlers);
+        }
+
+        $this->handlers = [ ...$handlers, ...$this->handlers ];
+    }
 
 
     /** 
@@ -104,5 +163,12 @@ class Catcher {
                 $this->handleError($error['type'], $error['message'], $error['file'], $error['line']);
             }
         }
+    }
+
+
+    public function __destruct() {
+        restore_error_handler();
+        restore_exception_handler();
+        register_shutdown_function(fn() => false);
     }
 }

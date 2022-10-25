@@ -1,0 +1,117 @@
+#!/usr/bin/env php
+<?php
+
+$cwd = __DIR__;
+$codeDir = "$cwd/lib";
+$testDir = "$cwd/tests";
+
+function help($error = true): void {
+    $help = <<<USAGE
+    Usage:
+        run test [typical|quick|coverage|full] [additional_phpunit_options]
+        run --help
+    
+    USAGE;
+
+    if ($error) {
+        fprintf(\STDERR, $help);
+    } else {
+        echo $help;
+    }
+
+    exit((int)$error);
+}
+
+function error(string $message): void {
+    fprintf(\STDERR, "ERROR: $message\n");
+    exit(1);
+}
+
+if (count($argv) === 1) {
+    help();
+}
+
+switch ($argv[1]) {
+    case 'test':
+        $opts = [
+            '--colors',
+            '--coverage-html='.escapeshellarg("$testDir/coverage")
+        ];
+
+        $argv[2] = $argv[2] ?? '';
+        switch ($argv[2]) {
+            case '':
+            case 'typical':
+                $opts[] = '--exclude-group=optional';
+            break;
+            case 'quick':
+                $opts[] = '--exclude-group=optional,slow';
+            break;
+            case 'coverage':
+                $opts[] = '--exclude-group=optional,coverageOptional';
+            break;
+            case 'full':
+            break;
+            default:
+                help();
+        }
+
+        if (isset($argv[3])) {
+            $opts = [ ...$opts, array_slice($argv, 3) ];
+        }
+
+        $opts = implode(' ', $opts);
+    break;
+    case '-h':
+    case '--help':
+        help(false);
+    break;
+    default: 
+        help();
+}
+
+$phpunitPath = escapeshellarg("$cwd/vendor/bin/phpunit");
+$confPath = "$testDir/phpunit.dist.xml";
+if (!file_exists($confPath)) {
+    $confPath = "$testDir/phpunit.xml";
+    if (!file_exists($confPath)) {
+        error('A phpunit configuration must be present at "tests/phpunit.dist.xml" or "tests/phpunit.xml"; aborting');
+    }
+}
+$confPath = escapeshellarg($confPath);
+
+$cmd = [
+    escapeshellarg(\PHP_BINARY),
+    '-d opcache.enable_cli=0',
+    '-d zend.assertions=1'
+];
+if (!extension_loaded('xdebug')) {
+    if (file_exists("$extDir/xdebug.so")) {
+        $cmd[] = '-d extension=xdebug.so';
+    } else {
+        error('Xdebug is not installed on your system; aborting');
+    }
+}
+$cmd[] = '-d xdebug.mode=coverage,trace';
+$cmd = implode(' ', $cmd);
+
+$process = proc_open("$cmd $phpunitPath -c $confPath $opts", [
+    1 => ['pipe', 'w'],
+    2 => ['pipe', 'w']
+], $pipes);
+
+if ($process === false) {
+    error('Failed to execute phpunit');
+}
+
+$stderr = trim(stream_get_contents($pipes[2]));
+$output = trim(stream_get_contents($pipes[1]));
+
+fclose($pipes[1]);
+fclose($pipes[2]);
+proc_close($process);
+
+echo "$output\n";
+if ($stderr !== '') {
+    error($stderr);
+}
