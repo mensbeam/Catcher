@@ -82,17 +82,18 @@ class Catcher {
         foreach ($handlers as $v => $h) {
             if (in_array($h, $this->handlers, true)) {
                 trigger_error("Handlers must be unique; skipping\n", \E_USER_WARNING);
+                unset($handlers[$v]);
+                $modified = true;
                 continue;
             }
-
-            unset($handlers[$v]);
-            $modified = true;
         }
         if ($modified) {
             $handlers = array_values($handlers);
         }
 
-        $this->handlers = [ ...$handlers, ...$this->handlers ];
+        if (count($handlers) > 0) {
+            $this->handlers = [ ...$handlers, ...$this->handlers ];
+        }
     }
 
 
