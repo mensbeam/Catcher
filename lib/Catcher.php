@@ -6,8 +6,8 @@
  */
 
 declare(strict_types=1);
-namespace MensBeam\Framework;
-use MensBeam\Framework\Catcher\{
+namespace MensBeam\Foundation;
+use MensBeam\Foundation\Catcher\{
     Handler,
     PlainTextHandler,
     ThrowableController,
@@ -23,6 +23,10 @@ class Catcher {
     protected array $handlers = [];
     /** Flag set when the shutdown handler is run */
     protected bool $isShuttingDown = false;
+    /** Flag set when the class has registered error, exception, and shutdown handlers */
+    protected bool $registered = false;
+    /** The last throwable handled by Catcher */
+    protected ?\Throwable $lastThrowable = null;
 
 
 
@@ -33,10 +37,7 @@ class Catcher {
         }
 
         $this->pushHandler(...$handlers);
-
-        set_error_handler([ $this, 'handleError' ]);
-        set_exception_handler([ $this, 'handleThrowable' ]);
-        register_shutdown_function([ $this, 'handleShutdown' ]);
+        $this->register();
     }
 
 
@@ -45,31 +46,49 @@ class Catcher {
         return $this->handlers;
     }
 
+    public function getLastThrowable(): \Throwable {
+        return $this->lastThrowable;
+    }
+
+    public function isRegistered(): bool {
+        return $this->registered;
+    }
+
+    public function popHandler(): Handler {
+        if (count($this->handlers) === 1) {
+            throw new \Exception("Popping the last handler will cause the Catcher to have zero handlers; there must be at least one\n");
+        }
+        
+        return array_pop($this->handlers);
+    }
+
     public function pushHandler(Handler ...$handlers): void {
+        if (count($handlers) === 0) {
+            throw new \ArgumentCountError(__METHOD__ . "expects at least 1 argument, 0 given\n");
+        }
+
+        $prev = [];
         foreach ($handlers as $h) {
-            if (in_array($h, $this->handlers, true)) {
+            if (in_array($h, $this->handlers, true) || in_array($h, $prev, true)) {
                 trigger_error("Handlers must be unique; skipping\n", \E_USER_WARNING);
                 continue;
             }
 
+            $prev[] = $h;
             $this->handlers[] = $h;
         }
     }
 
-    public function removeHandler(Handler ...$handlers): void {
-        foreach ($handlers as $h) {
-            foreach ($this->handlers as $k => $hh) {
-                if ($h === $hh) {
-                    if (count($this->handlers) === 1) {
-                        throw new \Exception("Removing handler will cause the Catcher to have zero handlers; there must be at least one\n");
-                    }
-
-                    unset($this->handlers[$k]);
-                    $this->handlers = array_values($this->handlers);
-                    continue 2;
-                }
-            }
+    public function register(): bool {
+        if ($this->registered) {
+            return false;
         }
+
+        set_error_handler([ $this, 'handleError' ]);
+        set_exception_handler([ $this, 'handleThrowable' ]);
+        register_shutdown_function([ $this, 'handleShutdown' ]);
+        $this->registered = true;
+        return true;
     }
 
     public function setHandlers(Handler ...$handlers): void {
@@ -77,15 +96,41 @@ class Catcher {
         $this->pushHandler(...$handlers);
     }
 
+    public function shiftHandler(): Handler {
+        if (count($this->handlers) === 1) {
+            throw new \Exception("Shifting the last handler will cause the Catcher to have zero handlers; there must be at least one\n");
+        }
+        
+        return array_shift($this->handlers);
+    }
+
+    public function unregister(): bool {
+        if (!$this->registered) {
+            return false;
+        }
+
+        restore_error_handler();
+        restore_exception_handler();
+        $this->registered = false;
+        return true;
+    }
+
     public function unshiftHandler(Handler ...$handlers): void {
+        if (count($handlers) === 0) {
+            throw new \ArgumentCountError(__METHOD__ . "expects at least 1 argument, 0 given\n");
+        }
+
         $modified = false;
+        $prev = [];
         foreach ($handlers as $v => $h) {
-            if (in_array($h, $this->handlers, true)) {
+            if (in_array($h, $this->handlers, true) || in_array($h, $prev, true)) {
                 trigger_error("Handlers must be unique; skipping\n", \E_USER_WARNING);
                 unset($handlers[$v]);
                 $modified = true;
                 continue;
             }
+
+            $prev[] = $h;
         }
         if ($modified) {
             $handlers = array_values($handlers);
@@ -127,7 +172,7 @@ class Catcher {
         $controller = new ThrowableController($throwable);
         foreach ($this->handlers as $h) {
             $output = $h->handle($controller);
-            if ($output->outputCode & Handler::OUTPUT_NOW) {
+            if ($output->outputCode & Handler::NOW) {
                 $h->dispatch();
             }
 
@@ -138,18 +183,20 @@ class Catcher {
         }
 
         if (
+            $this->isShuttingDown ||
+            $controlCode === Handler::EXIT ||
             $throwable instanceof \Exception || 
             ($throwable instanceof Error && in_array($throwable->getCode(), [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_COMPILE_ERROR, \E_USER_ERROR ])) ||
-            $throwable instanceof \Error
+            (!$throwable instanceof Error && $throwable instanceof \Error)
         ) {
             foreach ($this->handlers as $h) {
                 $h->dispatch();
             }
 
             exit($throwable->getCode());
-        } elseif ($controlCode === Handler::EXIT) {
-            exit($throwable->getCode());
         }
+
+        $this->lastThrowable = $throwable;
     }
 
     /** 
@@ -157,19 +204,14 @@ class Catcher {
      * 
      * @internal
      */
-    public function handleShutdown() {
-        $this->isShuttingDown = true;
-        if ($error = error_get_last()) {
-            if (in_array($error['type'], [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_CORE_WARNING, \E_COMPILE_ERROR, \E_COMPILE_WARNING ])) {
-                $this->handleError($error['type'], $error['message'], $error['file'], $error['line']);
-            }
+    public function handleShutdown(): void {
+        if (!$this->registered) {
+            return;
         }
-    }
 
-
-    public function __destruct() {
-        restore_error_handler();
-        restore_exception_handler();
-        register_shutdown_function(fn() => false);
+        $this->isShuttingDown = true;
+        if ($error = error_get_last() && in_array($error['type'], [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_CORE_WARNING, \E_COMPILE_ERROR, \E_COMPILE_WARNING ])) {
+            $this->handleError($error['type'], $error['message'], $error['file'], $error['line']);
+        }
     }
 }

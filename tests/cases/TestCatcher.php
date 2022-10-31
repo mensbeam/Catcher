@@ -6,53 +6,87 @@
  */
 
 declare(strict_types=1);
-namespace MensBeam\Framework\TestCase;
-use MensBeam\Framework\Catcher;
-use MensBeam\Framework\Catcher\{
+namespace MensBeam\Foundation\Catcher\TestCase;
+use MensBeam\Foundation\Catcher;
+use MensBeam\Foundation\Catcher\{
     PlainTextHandler,
     HTMLHandler,
     JSONHandler
 };
+use Spatie\Fork\Fork;
 
 
 class TestCatcher extends \PHPUnit\Framework\TestCase {
     /**
-     * @covers \MensBeam\Framework\Catcher::__construct()
+     * @covers \MensBeam\Foundation\Catcher::__construct
      * 
-     * @covers \MensBeam\Framework\Catcher::getHandlers()
-     * @covers \MensBeam\Framework\Catcher::pushHandler()
-     * @covers \MensBeam\Framework\Catcher::__destruct()
-     * @covers \MensBeam\Framework\Catcher\Handler::__construct()
+     * @covers \MensBeam\Foundation\Catcher::getHandlers
+     * @covers \MensBeam\Foundation\Catcher::pushHandler
+     * @covers \MensBeam\Foundation\Catcher::register
+     * @covers \MensBeam\Foundation\Catcher::unregister
+     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::__construct
      */
     public function testMethod___construct(): void {
         $c = new Catcher();
-        $this->assertSame('MensBeam\Framework\Catcher', $c::class);
+        $this->assertSame('MensBeam\Foundation\Catcher', $c::class);
         $this->assertEquals(1, count($c->getHandlers()));
         $this->assertSame(PlainTextHandler::class, $c->getHandlers()[0]::class);
-        $c->__destruct();
+        $c->unregister();
 
         $c = new Catcher(
             new PlainTextHandler(),
             new HTMLHandler(),
             new JSONHandler()
         );
-        $this->assertSame('MensBeam\Framework\Catcher', $c::class);
+        $this->assertSame('MensBeam\Foundation\Catcher', $c::class);
         $this->assertEquals(3, count($c->getHandlers()));
         $h = $c->getHandlers();
         $this->assertSame(PlainTextHandler::class, $h[0]::class);
         $this->assertSame(HTMLHandler::class, $h[1]::class);
         $this->assertSame(JSONHandler::class, $h[2]::class);
-        $c->__destruct();
+        $c->unregister();
     }
 
     /**
-     * @covers \MensBeam\Framework\Catcher::pushHandler()
+     * @covers \MensBeam\Foundation\Catcher::getLastThrowable
      * 
-     * @covers \MensBeam\Framework\Catcher::__construct()
-     * @covers \MensBeam\Framework\Catcher::__destruct()
-     * @covers \MensBeam\Framework\Catcher\Handler::__construct()
+     * @covers \MensBeam\Foundation\Catcher::__construct
+     * @covers \MensBeam\Foundation\Catcher::handleError
+     * @covers \MensBeam\Foundation\Catcher::handleThrowable
+     * @covers \MensBeam\Foundation\Catcher::pushHandler
+     * @covers \MensBeam\Foundation\Catcher::register
+     * @covers \MensBeam\Foundation\Catcher::unregister
+     * @covers \MensBeam\Foundation\Error::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
+     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
+     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
+     * @covers \MensBeam\Foundation\Catcher\Handler::handle
+     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeThrowable
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
      */
-    public function testMethod_pushHandler__warning(): void {
+    public function testMethod_getLastThrowable(): void {
+        $c = new Catcher(new PlainTextHandler([ 'silent' => true ]));
+        trigger_error('Ook!', \E_USER_WARNING);
+        $this->assertEquals(\E_USER_WARNING, $c->getLastThrowable()->getCode());
+        $c->unregister();
+    }
+
+    /**
+     * @covers \MensBeam\Foundation\Catcher::pushHandler
+     * 
+     * @covers \MensBeam\Foundation\Catcher::__construct
+     * @covers \MensBeam\Foundation\Catcher::register
+     * @covers \MensBeam\Foundation\Catcher::unregister
+     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     */
+    public function testMethod_pushHandler(): void {
         $e = null;
         set_error_handler(function($errno) use (&$e) {
             $e = $errno;
@@ -60,55 +94,89 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
 
         $h = new PlainTextHandler();
         $c = new Catcher($h, $h);
-        $c->__destruct();
+        $c->unregister();
+        $this->assertEquals(\E_USER_WARNING, $e);
+        $e = null;
+
+        $c = new Catcher();
+        $c->unregister();
+        $c->pushHandler($h, $h);
+        $this->assertEquals(\E_USER_WARNING, $e);
 
         restore_error_handler();
-        $this->assertEquals(\E_USER_WARNING, $e);
-    }
 
-    /**
-     * @covers \MensBeam\Framework\Catcher::removeHandler()
-     * 
-     * @covers \MensBeam\Framework\Catcher::__construct()
-     * @covers \MensBeam\Framework\Catcher::__destruct()
-     * @covers \MensBeam\Framework\Catcher::getHandlers()
-     * @covers \MensBeam\Framework\Catcher::removeHandler()
-     * @covers \MensBeam\Framework\Catcher\Handler::__construct()
-     */
-    public function testMethod_removeHandler(): void {
-        $h = new HTMLHandler();
-        $c = new Catcher(
-            new PlainTextHandler(),
-            $h
-        );
-        $this->assertEquals(2, count($c->getHandlers()));
-        $c->removeHandler($h);
-        $this->assertEquals(1, count($c->getHandlers()));
-        $c->__destruct();
+        $c = new Catcher();
+        $c->unregister();
 
         $e = null;
         try {
-            $h = [
-                new PlainTextHandler(),
-                new HTMLHandler(),
-            ];
-            $c = new Catcher(...$h);
-            $c->removeHandler(...$h);
+            $c->pushHandler();
         } catch (\Throwable $t) {
             $e = $t::class;
         } finally {
-            $c->__destruct();
+            $this->assertSame(\ArgumentCountError::class, $e);
+        }
+    }
+
+    /**
+     * @covers \MensBeam\Foundation\Catcher::popHandler
+     * 
+     * @covers \MensBeam\Foundation\Catcher::__construct
+     * @covers \MensBeam\Foundation\Catcher::pushHandler
+     * @covers \MensBeam\Foundation\Catcher::register
+     * @covers \MensBeam\Foundation\Catcher::unregister
+     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::__construct
+     */
+    public function testMethod_popHandler(): void {
+        $h = [
+            new HTMLHandler(),
+            new PlainTextHandler(),
+            new JSONHandler()
+        ];
+        $c = new Catcher(...$h);
+        $hh = $c->popHandler();
+        $this->assertSame($h[2], $hh);
+        $hh = $c->popHandler();
+        $this->assertSame($h[1], $hh);
+
+        $e = null;
+        try {
+            $c->popHandler();
+        } catch (\Throwable $t) {
+            $e = $t::class;
+        } finally {
+            $c->unregister();
             $this->assertSame(\Exception::class, $e);
         }
     }
 
     /**
-     * @covers \MensBeam\Framework\Catcher::setHandlers()
+     * @covers \MensBeam\Foundation\Catcher::isRegistered
      * 
-     * @covers \MensBeam\Framework\Catcher::__construct()
-     * @covers \MensBeam\Framework\Catcher::__destruct()
-     * @covers \MensBeam\Framework\Catcher::getHandlers()
-     * @covers \MensBeam\Framework\Catcher\Handler::__construct()
+     * @covers \MensBeam\Foundation\Catcher::__construct
+     * @covers \MensBeam\Foundation\Catcher::pushHandler
+     * @covers \MensBeam\Foundation\Catcher::register
+     * @covers \MensBeam\Foundation\Catcher::unregister
+     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     */
+    public function testMethod_register(): void {
+        $c = new Catcher();
+        $this->assertTrue($c->isRegistered());
+        $this->assertFalse($c->register());
+        $c->unregister();
+        $this->assertFalse($c->isRegistered());
+    }
+
+    /**
+     * @covers \MensBeam\Foundation\Catcher::setHandlers
+     * 
+     * @covers \MensBeam\Foundation\Catcher::__construct
+     * @covers \MensBeam\Foundation\Catcher::getHandlers
+     * @covers \MensBeam\Foundation\Catcher::pushHandler
+     * @covers \MensBeam\Foundation\Catcher::register
+     * @covers \MensBeam\Foundation\Catcher::unregister
+     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
      */
     public function testMethod_setHandlers(): void {
         $c = new Catcher();
@@ -116,15 +184,66 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         $h = $c->getHandlers();
         $this->assertEquals(1, count($h));
         $this->assertSame(PlainTextHandler::class, $h[0]::class);
-        $c->__destruct();
+        $c->unregister();
     }
 
     /**
-     * @covers \MensBeam\Framework\Catcher::unshiftHandler()
+     * @covers \MensBeam\Foundation\Catcher::shiftHandler
      * 
-     * @covers \MensBeam\Framework\Catcher::__construct()
-     * @covers \MensBeam\Framework\Catcher::__destruct()
-     * @covers \MensBeam\Framework\Catcher\Handler::__construct()
+     * @covers \MensBeam\Foundation\Catcher::__construct
+     * @covers \MensBeam\Foundation\Catcher::pushHandler
+     * @covers \MensBeam\Foundation\Catcher::register
+     * @covers \MensBeam\Foundation\Catcher::unregister
+     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::__construct
+     */
+    public function testMethod_shiftHandler(): void {
+        $h = [
+            new HTMLHandler(),
+            new PlainTextHandler(),
+            new JSONHandler()
+        ];
+        $c = new Catcher(...$h);
+        $c->unregister();
+        $hh = $c->shiftHandler();
+        $this->assertSame($h[0], $hh);
+        $hh = $c->shiftHandler();
+        $this->assertSame($h[1], $hh);
+
+        $e = null;
+        try {
+            $c->shiftHandler();
+        } catch (\Throwable $t) {
+            $e = $t::class;
+        } finally {
+            $this->assertSame(\Exception::class, $e);
+        }
+    }
+
+    /**
+     * @covers \MensBeam\Foundation\Catcher::unregister
+     * 
+     * @covers \MensBeam\Foundation\Catcher::__construct
+     * @covers \MensBeam\Foundation\Catcher::pushHandler
+     * @covers \MensBeam\Foundation\Catcher::register
+     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     */
+    public function testMethod_unregister(): void {
+        $c = new Catcher();
+        $c->unregister();
+        $this->assertFalse($c->unregister());
+    }
+
+    /**
+     * @covers \MensBeam\Foundation\Catcher::unshiftHandler
+     * 
+     * @covers \MensBeam\Foundation\Catcher::__construct
+     * @covers \MensBeam\Foundation\Catcher::getHandlers
+     * @covers \MensBeam\Foundation\Catcher::pushHandler
+     * @covers \MensBeam\Foundation\Catcher::register
+     * @covers \MensBeam\Foundation\Catcher::unregister
+     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::__construct
      */
     public function testMethod_unshiftHandler(): void {
         $c = new Catcher(new PlainTextHandler());
@@ -142,9 +261,39 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         });
 
         $c->unshiftHandler($h[0]);
-        $c->__destruct();
+        $this->assertEquals(\E_USER_WARNING, $e);
+        $e = null;
+        $h = new PlainTextHandler();
+        $c->unshiftHandler($h, $h);
+        $this->assertEquals(\E_USER_WARNING, $e);
 
         restore_error_handler();
-        $this->assertEquals(\E_USER_WARNING, $e);
+        $c->unregister();
+
+        $c = new Catcher();
+        $c->unregister();
+
+        $e = null;
+        try {
+            $c->unshiftHandler();
+        } catch (\Throwable $t) {
+            $e = $t::class;
+        } finally {
+            $this->assertSame(\ArgumentCountError::class, $e);
+        }
     }
+
+    /**
+     * @covers \MensBeam\Foundation\Catcher::handleError()
+     * 
+     * @covers \MensBeam\Foundation\Catcher::__construct()
+     * @covers \MensBeam\Foundation\Catcher::handleThrowable()
+     * @covers \MensBeam\Foundation\Catcher::register()
+     * @covers \MensBeam\Foundation\Catcher\Handler::__construct()
+     */
+    /*public function testMethod_handleError(): void {
+        $c = new Catcher(new PlainTextHandler([ 'silent' => true ]));
+        trigger_error('Ook!', \E_USER_WARNING);
+        $this->assertEquals(\E_USER_WARNING, $c->getLastThrowable()->getCode());
+    }*/
 }

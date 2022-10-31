@@ -6,7 +6,7 @@
  */
 
 declare(strict_types=1);
-namespace MensBeam\Framework\Catcher;
+namespace MensBeam\Foundation\Catcher;
 
 
 class HTMLHandler extends Handler {

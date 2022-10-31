@@ -6,7 +6,7 @@
  */
 
 declare(strict_types=1);
-namespace MensBeam\Framework\Catcher;
+namespace MensBeam\Foundation\Catcher;
 use \Psr\Log\LoggerInterface;
 
 
@@ -19,6 +19,8 @@ class PlainTextHandler extends Handler {
     protected bool $_outputTime = true;
     /** The PHP-standard date format which to use for timestamps in output */
     protected string $_timeFormat = '[H:i:s]';
+
+
 
 
     protected function dispatchCallback(): void {
@@ -89,7 +91,7 @@ class PlainTextHandler extends Handler {
         }
 
         $outputCode = $this->getOutputCode();
-        return new HandlerOutput($this->getControlCode(), ($outputCode === self::OUTPUT && \PHP_SAPI === 'CLI') ? self::OUTPUT_NOW : $outputCode, $output);
+        return new HandlerOutput($this->getControlCode(), (\PHP_SAPI === 'cli') ? $outputCode | self::NOW : $outputCode, $output);
     }
 
 

@@ -4,7 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace MensBeam\Framework;
+namespace MensBeam\Foundation;
 
 ini_set('memory_limit', '-1');
 ini_set('zend.assertions', '1');

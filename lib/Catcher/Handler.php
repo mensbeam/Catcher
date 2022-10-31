@@ -6,7 +6,7 @@
  */
 
 declare(strict_types=1);
-namespace MensBeam\Framework\Catcher;
+namespace MensBeam\Foundation\Catcher;
 
 
 abstract class Handler {
@@ -19,8 +19,8 @@ abstract class Handler {
 
     // Output constants
     public const OUTPUT = 16;
-    public const OUTPUT_NOW = 32;
-    public const SILENT = 64;
+    public const SILENT = 32;
+    public const NOW = 64;
 
 
     protected ThrowableController $controller;
@@ -164,11 +164,9 @@ abstract class Handler {
         $code = self::OUTPUT;
         if ($this->_silent) {
             $code = self::SILENT;
-            if ($this->_forceOutputNow) {
-                $code |= self::OUTPUT_NOW;
-            }
-        } elseif ($this->_forceOutputNow) {
-            $code = self::OUTPUT_NOW;
+        }
+        if ($this->_forceOutputNow) {
+            $code |= self::NOW;
         }
 
         return $code;
