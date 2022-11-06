@@ -5,6 +5,7 @@
 
 declare(strict_types=1);
 namespace MensBeam\Foundation;
+use MensBeam\Foundation\Catcher;
 
 ini_set('memory_limit', '-1');
 ini_set('zend.assertions', '1');
@@ -22,3 +23,5 @@ if (function_exists('xdebug_set_filter')) {
         xdebug_set_filter(\XDEBUG_FILTER_CODE_COVERAGE, \XDEBUG_PATH_WHITELIST, [ "$cwd/lib/" ]);
     }
 }
+
+Catcher::$preventExit = true;

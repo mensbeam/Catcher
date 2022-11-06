@@ -15,7 +15,8 @@ abstract class Handler {
     // Control constants
     public const CONTINUE = 1;
     public const BREAK = 2;
-    public const EXIT = 4;
+    public const EXIT = 4; // What if this were a bitmask option like NOW?
+    public const STOP = 8;
 
     // Output constants
     public const OUTPUT = 16;
@@ -45,8 +46,8 @@ abstract class Handler {
      * an error occurred 
      */
     protected string $_charset = 'UTF-8';
-    /** If true the handler will continue onto the next handler regardless */
-    protected bool $_forceContinue = false;
+    /** If true the handler will force break the loop through the stack of handlers */
+    protected bool $_forceBreak = false;
     /** If true the handler will force an exit */
     protected bool $_forceExit = false;
     /** 
@@ -150,11 +151,12 @@ abstract class Handler {
     }*/
 
     protected function getControlCode(): int {
-        $code = self::BREAK;
+        $code = self::CONTINUE;
+        if ($this->_forceBreak) {
+            $code = self::BREAK;
+        }
         if ($this->_forceExit) {
-            $code = self::EXIT;
-        } elseif ($this->_forceContinue) {
-            $code = self::CONTINUE;
+            $code |= self::EXIT;
         }
         
         return $code;

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6e9aedba10b2f2d0dc2c92f4b391e116",
+    "content-hash": "276b1ae35ddd23e0ebc736f079ecf98f",
     "packages": [
         {
             "name": "psr/log",
@@ -129,6 +129,153 @@
             "time": "2022-03-03T08:28:38+00:00"
         },
         {
+            "name": "eloquent/phony",
+            "version": "5.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/eloquent/phony.git",
+                "reference": "f34d67d6db6b6f351ea7e8aa8066107e756ec26b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/eloquent/phony/zipball/f34d67d6db6b6f351ea7e8aa8066107e756ec26b",
+                "reference": "f34d67d6db6b6f351ea7e8aa8066107e756ec26b",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.3 || ^8"
+            },
+            "require-dev": {
+                "eloquent/code-style": "^1.0",
+                "eloquent/phpstan-phony": "^0.7",
+                "errors/exceptions": "^0.2",
+                "ext-pdo": "*",
+                "friendsofphp/php-cs-fixer": "^2",
+                "hamcrest/hamcrest-php": "^2",
+                "phpstan/extension-installer": "^1",
+                "phpstan/phpstan": "^0.12",
+                "phpstan/phpstan-phpunit": "^0.12",
+                "phpunit/phpunit": "^9"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "5.1.x-dev"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/initialize.php",
+                    "src/functions.php"
+                ],
+                "psr-4": {
+                    "Eloquent\\Phony\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Erin Millard",
+                    "email": "ezzatron@gmail.com",
+                    "homepage": "http://ezzatron.com/"
+                }
+            ],
+            "description": "Mocks, stubs, and spies for PHP.",
+            "homepage": "http://eloquent-software.com/phony/",
+            "keywords": [
+                "Double",
+                "Dummy",
+                "fake",
+                "mock",
+                "mocking",
+                "spy",
+                "stub",
+                "stubbing",
+                "test"
+            ],
+            "support": {
+                "issues": "https://github.com/eloquent/phony/issues",
+                "source": "https://github.com/eloquent/phony/tree/5.0.2"
+            },
+            "time": "2021-02-17T01:45:10+00:00"
+        },
+        {
+            "name": "eloquent/phony-phpunit",
+            "version": "7.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/eloquent/phony-phpunit.git",
+                "reference": "e77ff95ea6235211d4aae7e5f53488a5faebc2e0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/eloquent/phony-phpunit/zipball/e77ff95ea6235211d4aae7e5f53488a5faebc2e0",
+                "reference": "e77ff95ea6235211d4aae7e5f53488a5faebc2e0",
+                "shasum": ""
+            },
+            "require": {
+                "eloquent/phony": "^5",
+                "php": "^7.3 || ^8",
+                "phpunit/phpunit": "^9"
+            },
+            "require-dev": {
+                "eloquent/code-style": "^1",
+                "eloquent/phpstan-phony": "^0.7",
+                "errors/exceptions": "^0.2",
+                "friendsofphp/php-cs-fixer": "^2",
+                "phpstan/extension-installer": "^1",
+                "phpstan/phpstan": "^0.12",
+                "phpstan/phpstan-phpunit": "^0.12"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "7.2.x-dev"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/initialize.php",
+                    "src/functions.php"
+                ],
+                "psr-4": {
+                    "Eloquent\\Phony\\Phpunit\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Erin Millard",
+                    "email": "ezzatron@gmail.com",
+                    "homepage": "http://ezzatron.com/"
+                }
+            ],
+            "description": "Phony for PHPUnit.",
+            "homepage": "http://eloquent-software.com/phony/",
+            "keywords": [
+                "Double",
+                "Dummy",
+                "fake",
+                "mock",
+                "mocking",
+                "spy",
+                "stub",
+                "stubbing",
+                "test"
+            ],
+            "support": {
+                "issues": "https://github.com/eloquent/phony-phpunit/issues",
+                "source": "https://github.com/eloquent/phony-phpunit/tree/7.1.0"
+            },
+            "time": "2020-12-21T09:36:47+00:00"
+        },
+        {
             "name": "mensbeam/framework",
             "version": "1.0.5",
             "source": {
@@ -167,7 +314,7 @@
                     "homepage": "https://dustinwilson.com/"
                 }
             ],
-            "description": "Common classes and traits used in many MensBeam projects",
+            "description": "Common classes and traits used in many Mensbeam projects",
             "support": {
                 "issues": "https://github.com/mensbeam/Framework/issues",
                 "source": "https://github.com/mensbeam/Framework/tree/1.0.5"
@@ -637,16 +784,16 @@
         },
         {
             "name": "phpunit/php-code-coverage",
-            "version": "9.2.17",
+            "version": "9.2.18",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/php-code-coverage.git",
-                "reference": "aa94dc41e8661fe90c7316849907cba3007b10d8"
+                "reference": "12fddc491826940cf9b7e88ad9664cf51f0f6d0a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/aa94dc41e8661fe90c7316849907cba3007b10d8",
-                "reference": "aa94dc41e8661fe90c7316849907cba3007b10d8",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/12fddc491826940cf9b7e88ad9664cf51f0f6d0a",
+                "reference": "12fddc491826940cf9b7e88ad9664cf51f0f6d0a",
                 "shasum": ""
             },
             "require": {
@@ -702,7 +849,7 @@
             ],
             "support": {
                 "issues": "https://github.com/sebastianbergmann/php-code-coverage/issues",
-                "source": "https://github.com/sebastianbergmann/php-code-coverage/tree/9.2.17"
+                "source": "https://github.com/sebastianbergmann/php-code-coverage/tree/9.2.18"
             },
             "funding": [
                 {
@@ -710,7 +857,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2022-08-30T12:24:04+00:00"
+            "time": "2022-10-27T13:35:33+00:00"
         },
         {
             "name": "phpunit/php-file-iterator",
@@ -955,16 +1102,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "9.5.25",
+            "version": "9.5.26",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "3e6f90ca7e3d02025b1d147bd8d4a89fd4ca8a1d"
+                "reference": "851867efcbb6a1b992ec515c71cdcf20d895e9d2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/3e6f90ca7e3d02025b1d147bd8d4a89fd4ca8a1d",
-                "reference": "3e6f90ca7e3d02025b1d147bd8d4a89fd4ca8a1d",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/851867efcbb6a1b992ec515c71cdcf20d895e9d2",
+                "reference": "851867efcbb6a1b992ec515c71cdcf20d895e9d2",
                 "shasum": ""
             },
             "require": {
@@ -1037,7 +1184,7 @@
             ],
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/9.5.25"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/9.5.26"
             },
             "funding": [
                 {
@@ -1053,7 +1200,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-09-25T03:44:45+00:00"
+            "time": "2022-10-28T06:00:21+00:00"
         },
         {
             "name": "psr/http-message",
@@ -2071,70 +2218,6 @@
                 }
             ],
             "time": "2020-09-28T06:39:44+00:00"
-        },
-        {
-            "name": "spatie/fork",
-            "version": "1.1.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/spatie/fork.git",
-                "reference": "d0232e94926c89e3bba7abbff8385140619bd826"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/spatie/fork/zipball/d0232e94926c89e3bba7abbff8385140619bd826",
-                "reference": "d0232e94926c89e3bba7abbff8385140619bd826",
-                "shasum": ""
-            },
-            "require": {
-                "ext-pcntl": "*",
-                "ext-sockets": "*",
-                "php": "^8.0"
-            },
-            "require-dev": {
-                "nesbot/carbon": "^2.47",
-                "phpunit/phpunit": "^9.5",
-                "spatie/ray": "^1.10"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Spatie\\Fork\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Brent Roose",
-                    "email": "brent@spatie.be",
-                    "role": "Developer"
-                },
-                {
-                    "name": "Freek Van der Herten",
-                    "email": "freek@spatie.be",
-                    "role": "Developer"
-                }
-            ],
-            "description": "A lightweight solution for running code concurrently in PHP",
-            "homepage": "https://github.com/spatie/fork",
-            "keywords": [
-                "fork",
-                "spatie"
-            ],
-            "support": {
-                "issues": "https://github.com/spatie/fork/issues",
-                "source": "https://github.com/spatie/fork/tree/1.1.2"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/spatie",
-                    "type": "github"
-                }
-            ],
-            "time": "2022-10-03T13:44:48+00:00"
         },
         {
             "name": "symfony/css-selector",

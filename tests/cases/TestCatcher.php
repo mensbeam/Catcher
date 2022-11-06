@@ -7,13 +7,16 @@
 
 declare(strict_types=1);
 namespace MensBeam\Foundation\Catcher\TestCase;
-use MensBeam\Foundation\Catcher;
+use MensBeam\Foundation\{
+    Catcher,
+    Error
+};
 use MensBeam\Foundation\Catcher\{
     PlainTextHandler,
     HTMLHandler,
     JSONHandler
 };
-use Spatie\Fork\Fork;
+use Eloquent\Phony\Phpunit\Phony;
 
 
 class TestCatcher extends \PHPUnit\Framework\TestCase {
@@ -284,16 +287,153 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher::handleError()
+     * @covers \MensBeam\Foundation\Catcher::handleError
      * 
-     * @covers \MensBeam\Foundation\Catcher::__construct()
-     * @covers \MensBeam\Foundation\Catcher::handleThrowable()
-     * @covers \MensBeam\Foundation\Catcher::register()
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct()
+     * @covers \MensBeam\Foundation\Catcher::__construct
+     * @covers \MensBeam\Foundation\Catcher::getLastThrowable
+     * @covers \MensBeam\Foundation\Catcher::exit
+     * @covers \MensBeam\Foundation\Catcher::handleThrowable
+     * @covers \MensBeam\Foundation\Catcher::pushHandler
+     * @covers \MensBeam\Foundation\Catcher::register
+     * @covers \MensBeam\Foundation\Catcher::unregister
+     * @covers \MensBeam\Foundation\Error::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
+     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
+     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
+     * @covers \MensBeam\Foundation\Catcher\Handler::handle
+     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeThrowable
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
      */
-    /*public function testMethod_handleError(): void {
+    public function testMethod_handleError(): void {
         $c = new Catcher(new PlainTextHandler([ 'silent' => true ]));
+
+        trigger_error('Ook!', \E_USER_NOTICE);
+        $t = $c->getLastThrowable();
+        $this->assertSame(Error::class, $t::class);
+        $this->assertSame(\E_USER_NOTICE, $t->getCode());
+
+        trigger_error('Ook!', \E_USER_DEPRECATED);
+        $t = $c->getLastThrowable();
+        $this->assertSame(Error::class, $t::class);
+        $this->assertSame(\E_USER_DEPRECATED, $t->getCode());
+
         trigger_error('Ook!', \E_USER_WARNING);
-        $this->assertEquals(\E_USER_WARNING, $c->getLastThrowable()->getCode());
-    }*/
+        $t = $c->getLastThrowable();
+        $this->assertSame(Error::class, $t::class);
+        $this->assertSame(\E_USER_WARNING, $t->getCode());
+
+        trigger_error('Ook!', \E_USER_ERROR);
+        $t = $c->getLastThrowable();
+        $this->assertSame(Error::class, $t::class);
+        $this->assertSame(\E_USER_ERROR, $t->getCode());
+
+        $er = error_reporting();
+        error_reporting(0);
+        trigger_error('Ook!', \E_USER_ERROR);
+        error_reporting($er);
+
+        $c->unregister();
+    }
+
+    /**
+     * @covers \MensBeam\Foundation\Catcher::handleThrowable
+     * 
+     * @covers \MensBeam\Foundation\Catcher::__construct
+     * @covers \MensBeam\Foundation\Catcher::getLastThrowable
+     * @covers \MensBeam\Foundation\Catcher::handleError
+     * @covers \MensBeam\Foundation\Catcher::pushHandler
+     * @covers \MensBeam\Foundation\Catcher::register
+     * @covers \MensBeam\Foundation\Catcher::unregister
+     * @covers \MensBeam\Foundation\Error::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
+     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
+     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
+     * @covers \MensBeam\Foundation\Catcher\Handler::handle
+     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeThrowable
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
+     */
+    public function testMethod_handleThrowable(): void {
+        $c = new Catcher(new PlainTextHandler([ 'silent' => true, 'forceBreak' => true ]));
+        trigger_error('Ook!', \E_USER_ERROR);
+        $t = $c->getLastThrowable();
+        $this->assertSame(Error::class, $t::class);
+        $this->assertSame(\E_USER_ERROR, $t->getCode());
+        $c->unregister();
+
+        Catcher::$preventExit = false;
+        $h = Phony::partialMock(Catcher::class, [ new PlainTextHandler([ 'silent' => true ]) ]);
+        $h->exit->returns();
+        $c = $h->get();
+        trigger_error('Ook!', \E_USER_ERROR);
+        $t = $c->getLastThrowable();
+        $this->assertSame(Error::class, $t::class);
+        $this->assertSame(\E_USER_ERROR, $t->getCode());
+        $c->unregister();
+        Catcher::$preventExit = true;
+    }
+
+    /**
+     * @covers \MensBeam\Foundation\Catcher::handleShutdown
+     * 
+     * @covers \MensBeam\Foundation\Catcher::__construct
+     * @covers \MensBeam\Foundation\Catcher::getLastError
+     * @covers \MensBeam\Foundation\Catcher::handleError
+     * @covers \MensBeam\Foundation\Catcher::handleThrowable
+     * @covers \MensBeam\Foundation\Catcher::pushHandler
+     * @covers \MensBeam\Foundation\Catcher::register
+     * @covers \MensBeam\Foundation\Catcher::unregister
+     * @covers \MensBeam\Foundation\Error::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
+     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
+     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
+     * @covers \MensBeam\Foundation\Catcher\Handler::handle
+     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeThrowable
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
+     */
+    public function testMethod_handleShutdown(): void {
+        $c = new Catcher();
+        $c->handleShutdown();
+        $p = new \ReflectionProperty($c, 'isShuttingDown');
+        $p->setAccessible(true);
+        $this->assertTrue($p->getValue($c));
+        $c->unregister();
+
+        $c = new Catcher();
+        $c->unregister();
+        $c->handleShutdown();
+        $p = new \ReflectionProperty($c, 'isShuttingDown');
+        $p->setAccessible(true);
+        $this->assertFalse($p->getValue($c));
+
+        $h = Phony::partialMock(Catcher::class, [ new PlainTextHandler([ 'silent' => true ]) ]);
+        $h->getLastError->returns([
+            'type' => \E_ERROR,
+            'message' => 'Ook!',
+            'file' => '/dev/null',
+            'line' => 2112
+        ]);
+        $c = $h->get();
+        $c->handleShutdown();
+        $h->handleError->called();
+        $h->handleThrowable->called();
+        $c->unregister();
+    }
 }

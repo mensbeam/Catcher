@@ -15,6 +15,9 @@ use MensBeam\Foundation\Catcher\{
 
 
 class Catcher {
+    /** When set to true Catcher won't exit when instructed */
+    public static $preventExit = false;
+
     /** 
      * Array of handlers the exceptions are passed to
      * 
@@ -46,7 +49,7 @@ class Catcher {
         return $this->handlers;
     }
 
-    public function getLastThrowable(): \Throwable {
+    public function getLastThrowable(): ?\Throwable {
         return $this->lastThrowable;
     }
 
@@ -150,17 +153,12 @@ class Catcher {
      */
     public function handleError(int $code, string $message, ?string $file = null, ?int $line = null): bool {
         if ($code !== 0 && error_reporting()) {
-            $error = new Error($message, $code, $file, $line);
-            if ($this->isShuttingDown) {
-                throw $error;
-            } else {
-                $this->handleThrowable($error);
-            }
-
+            $this->handleThrowable(new Error($message, $code, $file, $line));
             return true;
         }
-
-        return false;
+        
+        // If preventing exit we don't want a false here to halt processing
+        return (self::$preventExit);
     }
 
     /** 
@@ -177,14 +175,14 @@ class Catcher {
             }
 
             $controlCode = $output->controlCode;
-            if ($controlCode !== Handler::CONTINUE) {
+            if ($controlCode & Handler::BREAK) {
                 break;
             }
         }
 
         if (
             $this->isShuttingDown ||
-            $controlCode === Handler::EXIT ||
+            $controlCode & Handler::EXIT ||
             $throwable instanceof \Exception || 
             ($throwable instanceof Error && in_array($throwable->getCode(), [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_COMPILE_ERROR, \E_USER_ERROR ])) ||
             (!$throwable instanceof Error && $throwable instanceof \Error)
@@ -193,7 +191,13 @@ class Catcher {
                 $h->dispatch();
             }
 
-            exit($throwable->getCode());
+            $this->lastThrowable = $throwable;
+
+            // Don't want to exit here when shutting down so any shutdown functions further 
+            // down the stack still run.
+            if (!self::$preventExit && !$this->isShuttingDown) {
+                $this->exit($throwable->getCode());
+            }
         }
 
         $this->lastThrowable = $throwable;
@@ -210,8 +214,22 @@ class Catcher {
         }
 
         $this->isShuttingDown = true;
-        if ($error = error_get_last() && in_array($error['type'], [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_CORE_WARNING, \E_COMPILE_ERROR, \E_COMPILE_WARNING ])) {
-            $this->handleError($error['type'], $error['message'], $error['file'], $error['line']);
+        if ($error = $this->getLastError()) {
+            if (in_array($error['type'], [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_CORE_WARNING, \E_COMPILE_ERROR, \E_COMPILE_WARNING ])) {
+                $this->handleError($error['type'], $error['message'], $error['file'], $error['line']);
+            }
         }
+    }
+
+
+    /** Exists so the method may be replaced when mocking in tests */
+    protected function exit(int $status): void {
+        // This won't be shown as executed in code coverage
+        exit($status); //@codeCoverageIgnore
+    }
+
+    /** Exists so the method may be replaced when mocking in tests */
+    protected function getLastError(): ?array {
+        return error_get_last();
     }
 }

@@ -9,7 +9,7 @@ declare(strict_types=1);
 namespace MensBeam\Foundation;
 
 class Error extends \Error {
-    public function __construct(string $message = '', int $code = 0, ?string $file = null, ?int $line = line, ?\Throwable $previous = null) {
+    public function __construct(string $message = '', int $code = 0, string $file = '', int $line = 0, ?\Throwable $previous = null) {
         parent::__construct($message, $code, $previous);
         $this->file = $file;
         $this->line = $line;
