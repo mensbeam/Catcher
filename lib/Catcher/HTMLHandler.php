@@ -76,15 +76,19 @@ class HTMLHandler extends Handler {
 
     protected function dispatchCallback(): void {
         $body = $this->_document->getElementsByTagName('body')[0];
+        $allSilent = true;
         foreach ($this->outputBuffer as $o) {
             if ($o->outputCode & self::SILENT) {
                 continue;
             }
 
+            $allSilent = false;
             $body->appendChild($o->output);
         }
 
-        $this->print($this->_document->saveHTML());
+        if (!$allSilent) {
+            $this->print($this->_document->saveHTML());
+        }
     }
 
     protected function handleCallback(ThrowableController $controller): HandlerOutput {

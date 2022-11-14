@@ -32,8 +32,11 @@ class JSONHandler extends Handler {
 
             $errors[] = $o->output;
         }
+        if (count($errors) === 0) {
+            return;
+        }
+        
         $output['errors'] = $errors;
-
         $this->print(json_encode($output, \JSON_PARTIAL_OUTPUT_ON_ERROR));
     }
 

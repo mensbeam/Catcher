@@ -6,15 +6,13 @@
  */
 
 declare(strict_types=1);
-namespace MensBeam\Foundation\Catcher\TestCase;
-use MensBeam\Foundation\{
-    Catcher,
-    Error
-};
+namespace MensBeam\Foundation\Catcher\Test;
+use MensBeam\Foundation\Catcher;
 use MensBeam\Foundation\Catcher\{
-    PlainTextHandler,
+    Error,
     HTMLHandler,
-    JSONHandler
+    JSONHandler,
+    PlainTextHandler
 };
 use Eloquent\Phony\Phpunit\Phony;
 
@@ -60,7 +58,7 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      * @covers \MensBeam\Foundation\Catcher::pushHandler
      * @covers \MensBeam\Foundation\Catcher::register
      * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Error::__construct
+     * @covers \MensBeam\Foundation\Catcher\Error::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
      * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
@@ -296,7 +294,7 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      * @covers \MensBeam\Foundation\Catcher::pushHandler
      * @covers \MensBeam\Foundation\Catcher::register
      * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Error::__construct
+     * @covers \MensBeam\Foundation\Catcher\Error::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
      * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
@@ -339,6 +337,25 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         error_reporting($er);
 
         $c->unregister();
+
+        $h1 = Phony::partialMock(PlainTextHandler::class, [ [ 'silent' => true ] ]);
+        $h2 = Phony::partialMock(HTMLHandler::class, [ [ 'silent' => true ] ]);
+        $h3 = Phony::partialMock(JSONHandler::class, [ [ 'silent' => true ] ]);
+
+        $h = Phony::partialMock(Catcher::class, [ 
+            $h1->get(),
+            $h2->get(),
+            $h3->get()
+        ]);
+        $c = $h->get();
+
+        trigger_error('Ook!', \E_USER_ERROR);
+
+        $h1->dispatch->called();
+        $h2->dispatch->called();
+        $h3->dispatch->called();
+
+        $c->unregister();
     }
 
     /**
@@ -350,7 +367,7 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      * @covers \MensBeam\Foundation\Catcher::pushHandler
      * @covers \MensBeam\Foundation\Catcher::register
      * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Error::__construct
+     * @covers \MensBeam\Foundation\Catcher\Error::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
      * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
@@ -394,7 +411,7 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      * @covers \MensBeam\Foundation\Catcher::pushHandler
      * @covers \MensBeam\Foundation\Catcher::register
      * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Error::__construct
+     * @covers \MensBeam\Foundation\Catcher\Error::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
      * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode

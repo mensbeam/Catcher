@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "276b1ae35ddd23e0ebc736f079ecf98f",
+    "content-hash": "426fded11213b92f432b1083735aeae4",
     "packages": [
         {
             "name": "psr/log",
@@ -274,6 +274,48 @@
                 "source": "https://github.com/eloquent/phony-phpunit/tree/7.1.0"
             },
             "time": "2020-12-21T09:36:47+00:00"
+        },
+        {
+            "name": "giberti/phpunit-local-server",
+            "version": "v3.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/giberti/phpunit-local-server.git",
+                "reference": "61d07cb083fe5a354d95d84f357c63ba30d74862"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/giberti/phpunit-local-server/zipball/61d07cb083fe5a354d95d84f357c63ba30d74862",
+                "reference": "61d07cb083fe5a354d95d84f357c63ba30d74862",
+                "shasum": ""
+            },
+            "require": {
+                "ext-posix": "*",
+                "php": "^7.3 || ^8.0",
+                "phpunit/phpunit": "^8.0 || ^9.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Giberti\\PHPUnitLocalServer\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Erik Giberti",
+                    "homepage": "https://github.com/giberti"
+                }
+            ],
+            "description": "A local HTTP server for PHPUnit tests",
+            "support": {
+                "issues": "https://github.com/giberti/phpunit-local-server/issues",
+                "source": "https://github.com/giberti/phpunit-local-server/tree/v3.0.0"
+            },
+            "time": "2022-05-01T01:31:15+00:00"
         },
         {
             "name": "mensbeam/framework",

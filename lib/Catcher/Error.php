@@ -6,7 +6,7 @@
  */
 
 declare(strict_types=1);
-namespace MensBeam\Foundation;
+namespace MensBeam\Foundation\Catcher;
 
 class Error extends \Error {
     public function __construct(string $message = '', int $code = 0, string $file = '', int $line = 0, ?\Throwable $previous = null) {

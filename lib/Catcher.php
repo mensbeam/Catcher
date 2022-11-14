@@ -8,6 +8,7 @@
 declare(strict_types=1);
 namespace MensBeam\Foundation;
 use MensBeam\Foundation\Catcher\{
+    Error,
     Handler,
     PlainTextHandler,
     ThrowableController,
@@ -218,6 +219,10 @@ class Catcher {
             if (in_array($error['type'], [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_CORE_WARNING, \E_COMPILE_ERROR, \E_COMPILE_WARNING ])) {
                 $this->handleError($error['type'], $error['message'], $error['file'], $error['line']);
             }
+        } else {
+            foreach ($this->handlers as $h) {
+                $h->dispatch();
+            }
         }
     }
 
@@ -225,7 +230,7 @@ class Catcher {
     /** Exists so the method may be replaced when mocking in tests */
     protected function exit(int $status): void {
         // This won't be shown as executed in code coverage
-        exit($status); //@codeCoverageIgnore
+        exit($status); // @codeCoverageIgnore
     }
 
     /** Exists so the method may be replaced when mocking in tests */

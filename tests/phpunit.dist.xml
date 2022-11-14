@@ -18,6 +18,7 @@
   <testsuites>
     <testsuite name="Main">
       <file>cases/TestCatcher.php</file>
+      <file>cases/TestHandler.php</file>
     </testsuite>
   </testsuites>
 </phpunit>
