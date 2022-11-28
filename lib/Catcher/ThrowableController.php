@@ -102,7 +102,7 @@ class ThrowableController {
         ) {
             $frames = $this->throwable->getTrace();
         } else {
-            $frames = array_diff_key(array_reverse(xdebug_get_function_stack()), debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
+            $frames = array_values(array_diff_key(xdebug_get_function_stack(), debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS)));
         }
 
         // PHP for some stupid reason thinks it's okay not to provide line numbers and file 
@@ -133,11 +133,17 @@ class ThrowableController {
         }
 
         // Delete everything that has anything to do with userland error handling
-        for ($frameCount = count($frames), $i = $frameCount - 1; $i >= 0; $i--) {
-            $frame = $frames[$i];
-            if ($frame['file'] === $this->throwable->getFile() && $frame['line'] === $this->throwable->getLine()) {
-                array_splice($frames, 0, $i);
-                break;
+        $frameCount = count($frames);
+        if ($frameCount > 0) {
+            $tFile = $this->throwable->getFile();
+            $tLine = $this->throwable->getLine();
+
+            for ($i = $frameCount - 1; $i >= 0; $i--) {
+                $frame = $frames[$i];
+                if ($tFile === $frame['file'] && $tLine === $frame['line']) {
+                    array_splice($frames, 0, $i);
+                    break;
+                }
             }
         }
 

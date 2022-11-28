@@ -92,7 +92,7 @@ if (!extension_loaded('xdebug')) {
         error('Xdebug is not installed on your system; aborting');
     }
 }
-$cmd[] = '-d xdebug.mode=coverage,trace';
+$cmd[] = '-d xdebug.mode=coverage,develop,trace';
 $cmd = implode(' ', $cmd);
 
 $process = proc_open("$cmd $phpunitPath -c $confPath $opts", [

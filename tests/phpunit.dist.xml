@@ -19,6 +19,7 @@
     <testsuite name="Main">
       <file>cases/TestCatcher.php</file>
       <file>cases/TestHandler.php</file>
+      <file>cases/TestThrowableController.php</file>
     </testsuite>
   </testsuites>
 </phpunit>
