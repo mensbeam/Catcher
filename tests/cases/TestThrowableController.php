@@ -88,6 +88,9 @@ class TestThrowableController extends \PHPUnit\Framework\TestCase {
     /**
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getFrames
      * 
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
      */
     public function testMethod_getFrames(): void {
         $f = false;
@@ -97,7 +100,7 @@ class TestThrowableController extends \PHPUnit\Framework\TestCase {
             $c = new ThrowableController($t);
             $f = $c->getFrames();
         } finally {
-            $this->assertEquals('Exception', $f[0]['class']);
+            $this->assertEquals(\Exception::class, $f[0]['class']);
         }
 
         $f = false;
@@ -109,5 +112,50 @@ class TestThrowableController extends \PHPUnit\Framework\TestCase {
         } finally {
             $this->assertEquals(Error::class, $f[0]['class']);
         }
+
+        $f = false;
+        try {
+            throw new \Exception(message: 'Ook!', previous: new Error('Ook!', \E_ERROR));
+        } catch (\Throwable $t) {
+            $c = new ThrowableController($t);
+            $f = $c->getFrames();
+        } finally {
+            $this->assertEquals(\Exception::class, $f[0]['class']);
+            $this->assertEquals(Error::class, $f[count($f) - 2]['class']);
+        }
+
+        $f = false;
+        try {
+            call_user_func_array(function () {
+                throw new \Exception('Ook!');
+            }, []);
+        } catch (\Throwable $t) {
+            $c = new ThrowableController($t);
+            $f = $c->getFrames();
+        } finally {
+            $this->assertEquals(\Exception::class, $f[0]['class']);
+            $this->assertArrayHasKey('file', $f[2]);
+            $this->assertMatchesRegularExpression('/TestThrowableController\.php$/', $f[2]['file']);
+            $this->assertEquals('call_user_func_array', $f[2]['function']);
+            $this->assertArrayHasKey('line', $f[2]);
+            $this->assertNotEquals(0, $f[2]['line']);
+        }
+
+        // This is mostly here for code coverage: to delete userland error handling from 
+        // the backtrace
+        $f = false;
+        try {
+            function ook() {}
+            call_user_func('ook', []);
+        } catch (\Throwable $t) {
+            $c = new ThrowableController($t);
+            $f = $c->getFrames();
+        } finally {
+            $this->assertEquals(\TypeError::class, $f[0]['class']);
+        }
+
+        // For code coverage purposes; should use the cached value instead of calculating 
+        // the frames over again.
+        $f = $c->getFrames();
     }
 }

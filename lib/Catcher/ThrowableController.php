@@ -116,10 +116,10 @@ class ThrowableController {
                 $next = $frames[$key + 1] ?? [];
 
                 if (
-                    !empty($frame['file']) && 
-                    !empty($frame['function']) &&
-                    !empty($frame['line']) && 
-                    str_contains($frame['function'], 'call_user_func')
+                    !empty($next['file']) && 
+                    !empty($next['function']) &&
+                    !empty($next['line']) && 
+                    str_contains($next['function'], 'call_user_func')
                 ) {
                     $file = $next['file'];
                     $line = $next['line'];
@@ -157,11 +157,12 @@ class ThrowableController {
             ]
         ];
 
-        // Add the error name if it is an Error.
+        // Add the error code and type if it is an Error.
         if ($this->throwable instanceof \Error) {
             $error = $this->getErrorType();
             if ($error !== null) {
-                $f['error'] = $error;
+                $f['code'] = $this->throwable->getCode(); 
+                $f['type'] = $error;
             }
         }
 
@@ -169,20 +170,21 @@ class ThrowableController {
 
         // Go through previous throwables and merge in their frames
         if ($prev = $this->getPrevious()) {
-            $a = $frames;
-            $b = $prev->getFrames();
-            $prevThrowable = $prev->getThrowable();
+            $frames = [ ...$frames, ...$prev->getFrames() ];
 
-            $diff = $a;
-            for ($i = count($a) - 1, $j = count($b) - 1; $i >= 0 && $j >= 0; $i--, $j--) {
-                $af = $diff[$i]['file'];
-                $bf = $b[$j]['file'];
-                if ($af && $bf && $af === $bf && $diff[$i]['line'] === $b[$j]['line']) {
-                    unset($diff[$i]);
+            $temp = [];
+            foreach ($frames as $f) {
+                if (isset($f['file']) && isset($f['line'])) {
+                    foreach ($temp as $t) {
+                        if (isset($t['file']) && isset($t['line']) && $f['file'] === $t['file'] && $f['line'] === $t['line']) {
+                            continue 2;
+                        }
+                    }
                 }
-            }
 
-            $frames = [ ...$diff, ...$b ];
+                $temp[] = $f;
+            }
+            $frames = $temp;
         }
 
         $this->frames = $frames;
