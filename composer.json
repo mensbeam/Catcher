@@ -25,7 +25,6 @@
         "mensbeam/html-dom": "^1.0",
         "phpunit/phpunit": "^9.5",
         "nikic/php-parser": "^4.15",
-        "eloquent/phony-phpunit": "^7.1",
-        "giberti/phpunit-local-server": "^3.0"
+        "eloquent/phony-phpunit": "^7.1"
     }
 }

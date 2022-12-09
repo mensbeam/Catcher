@@ -31,7 +31,7 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
     public function testMethod___construct(): void {
         $c = new Catcher();
         $this->assertSame('MensBeam\Foundation\Catcher', $c::class);
-        $this->assertEquals(1, count($c->getHandlers()));
+        $this->assertSame(1, count($c->getHandlers()));
         $this->assertSame(PlainTextHandler::class, $c->getHandlers()[0]::class);
         $c->unregister();
 
@@ -41,7 +41,7 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
             new JSONHandler()
         );
         $this->assertSame('MensBeam\Foundation\Catcher', $c::class);
-        $this->assertEquals(3, count($c->getHandlers()));
+        $this->assertSame(3, count($c->getHandlers()));
         $h = $c->getHandlers();
         $this->assertSame(PlainTextHandler::class, $h[0]::class);
         $this->assertSame(HTMLHandler::class, $h[1]::class);
@@ -75,7 +75,7 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
     public function testMethod_getLastThrowable(): void {
         $c = new Catcher(new PlainTextHandler([ 'silent' => true ]));
         trigger_error('Ook!', \E_USER_WARNING);
-        $this->assertEquals(\E_USER_WARNING, $c->getLastThrowable()->getCode());
+        $this->assertSame(\E_USER_WARNING, $c->getLastThrowable()->getCode());
         $c->unregister();
     }
 
@@ -96,13 +96,13 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         $h = new PlainTextHandler();
         $c = new Catcher($h, $h);
         $c->unregister();
-        $this->assertEquals(\E_USER_WARNING, $e);
+        $this->assertSame(\E_USER_WARNING, $e);
         $e = null;
 
         $c = new Catcher();
         $c->unregister();
         $c->pushHandler($h, $h);
-        $this->assertEquals(\E_USER_WARNING, $e);
+        $this->assertSame(\E_USER_WARNING, $e);
 
         restore_error_handler();
 
@@ -183,7 +183,7 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         $c = new Catcher();
         $c->setHandlers(new PlainTextHandler());
         $h = $c->getHandlers();
-        $this->assertEquals(1, count($h));
+        $this->assertSame(1, count($h));
         $this->assertSame(PlainTextHandler::class, $h[0]::class);
         $c->unregister();
     }
@@ -250,7 +250,7 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         $c = new Catcher(new PlainTextHandler());
         $c->unshiftHandler(new JSONHandler(), new HTMLHandler(), new PlainTextHandler());
         $h = $c->getHandlers();
-        $this->assertEquals(4, count($h));
+        $this->assertSame(4, count($h));
         $this->assertSame(JSONHandler::class, $h[0]::class);
         $this->assertSame(HTMLHandler::class, $h[1]::class);
         $this->assertSame(PlainTextHandler::class, $h[2]::class);
@@ -262,11 +262,11 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         });
 
         $c->unshiftHandler($h[0]);
-        $this->assertEquals(\E_USER_WARNING, $e);
+        $this->assertSame(\E_USER_WARNING, $e);
         $e = null;
         $h = new PlainTextHandler();
         $c->unshiftHandler($h, $h);
-        $this->assertEquals(\E_USER_WARNING, $e);
+        $this->assertSame(\E_USER_WARNING, $e);
 
         restore_error_handler();
         $c->unregister();

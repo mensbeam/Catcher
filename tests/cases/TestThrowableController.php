@@ -46,39 +46,39 @@ class TestThrowableController extends \PHPUnit\Framework\TestCase {
         ob_start();
         trigger_error('Ook!', \E_USER_DEPRECATED);
         ob_end_clean();
-        $this->assertEquals(\E_USER_DEPRECATED, $c->getLastThrowable()->getCode());
+        $this->assertSame(\E_USER_DEPRECATED, $c->getLastThrowable()->getCode());
         $c->unregister();
 
         $c = new Catcher(new PlainTextHandler([ 'outputToStderr' => false ]));
         ob_start();
         trigger_error('Ook!', \E_USER_WARNING);
         ob_end_clean();
-        $this->assertEquals(\E_USER_WARNING, $c->getLastThrowable()->getCode());
+        $this->assertSame(\E_USER_WARNING, $c->getLastThrowable()->getCode());
         $c->unregister();
 
         // These others will be tested by invoking the method directly
         $c = new ThrowableController(new Error('Ook!', \E_ERROR));
-        $this->assertEquals('PHP Fatal Error', $c->getErrorType());
+        $this->assertSame('PHP Fatal Error', $c->getErrorType());
         $c = new ThrowableController(new Error('Ook!', \E_WARNING));
-        $this->assertEquals('PHP Warning', $c->getErrorType());
+        $this->assertSame('PHP Warning', $c->getErrorType());
         $c = new ThrowableController(new Error('Ook!', \E_PARSE));
-        $this->assertEquals('PHP Parsing Error', $c->getErrorType());
+        $this->assertSame('PHP Parsing Error', $c->getErrorType());
         $c = new ThrowableController(new Error('Ook!', \E_NOTICE));
-        $this->assertEquals('PHP Notice', $c->getErrorType());
+        $this->assertSame('PHP Notice', $c->getErrorType());
         $c = new ThrowableController(new Error('Ook!', \E_DEPRECATED));
-        $this->assertEquals('Deprecated', $c->getErrorType());
+        $this->assertSame('Deprecated', $c->getErrorType());
         $c = new ThrowableController(new Error('Ook!', \E_CORE_ERROR));
-        $this->assertEquals('PHP Core Error', $c->getErrorType());
+        $this->assertSame('PHP Core Error', $c->getErrorType());
         $c = new ThrowableController(new Error('Ook!', \E_CORE_WARNING));
-        $this->assertEquals('PHP Core Warning', $c->getErrorType());
+        $this->assertSame('PHP Core Warning', $c->getErrorType());
         $c = new ThrowableController(new Error('Ook!', \E_COMPILE_ERROR));
-        $this->assertEquals('Compile Error', $c->getErrorType());
+        $this->assertSame('Compile Error', $c->getErrorType());
         $c = new ThrowableController(new Error('Ook!', \E_COMPILE_WARNING));
-        $this->assertEquals('Compile Warning', $c->getErrorType());
+        $this->assertSame('Compile Warning', $c->getErrorType());
         $c = new ThrowableController(new Error('Ook!', \E_STRICT));
-        $this->assertEquals('Runtime Notice', $c->getErrorType());
+        $this->assertSame('Runtime Notice', $c->getErrorType());
         $c = new ThrowableController(new Error('Ook!', \E_RECOVERABLE_ERROR));
-        $this->assertEquals('Recoverable Error', $c->getErrorType());
+        $this->assertSame('Recoverable Error', $c->getErrorType());
         $c = new ThrowableController(new Error('Ook!'));
         $this->assertNull($c->getErrorType());
         $c = new ThrowableController(new \Exception('Ook!'));
@@ -100,7 +100,7 @@ class TestThrowableController extends \PHPUnit\Framework\TestCase {
             $c = new ThrowableController($t);
             $f = $c->getFrames();
         } finally {
-            $this->assertEquals(\Exception::class, $f[0]['class']);
+            $this->assertSame(\Exception::class, $f[0]['class']);
         }
 
         $f = false;
@@ -110,7 +110,7 @@ class TestThrowableController extends \PHPUnit\Framework\TestCase {
             $c = new ThrowableController($t);
             $f = $c->getFrames();
         } finally {
-            $this->assertEquals(Error::class, $f[0]['class']);
+            $this->assertSame(Error::class, $f[0]['class']);
         }
 
         $f = false;
@@ -120,8 +120,8 @@ class TestThrowableController extends \PHPUnit\Framework\TestCase {
             $c = new ThrowableController($t);
             $f = $c->getFrames();
         } finally {
-            $this->assertEquals(\Exception::class, $f[0]['class']);
-            $this->assertEquals(Error::class, $f[count($f) - 2]['class']);
+            $this->assertSame(\Exception::class, $f[0]['class']);
+            $this->assertSame(Error::class, $f[count($f) - 2]['class']);
         }
 
         $f = false;
@@ -133,12 +133,12 @@ class TestThrowableController extends \PHPUnit\Framework\TestCase {
             $c = new ThrowableController($t);
             $f = $c->getFrames();
         } finally {
-            $this->assertEquals(\Exception::class, $f[0]['class']);
+            $this->assertSame(\Exception::class, $f[0]['class']);
             $this->assertArrayHasKey('file', $f[2]);
             $this->assertMatchesRegularExpression('/TestThrowableController\.php$/', $f[2]['file']);
-            $this->assertEquals('call_user_func_array', $f[2]['function']);
+            $this->assertSame('call_user_func_array', $f[2]['function']);
             $this->assertArrayHasKey('line', $f[2]);
-            $this->assertNotEquals(0, $f[2]['line']);
+            $this->assertNotSame(0, $f[2]['line']);
         }
 
         // This is mostly here for code coverage: to delete userland error handling from 
@@ -151,7 +151,7 @@ class TestThrowableController extends \PHPUnit\Framework\TestCase {
             $c = new ThrowableController($t);
             $f = $c->getFrames();
         } finally {
-            $this->assertEquals(\TypeError::class, $f[0]['class']);
+            $this->assertSame(\TypeError::class, $f[0]['class']);
         }
 
         // For code coverage purposes; should use the cached value instead of calculating 

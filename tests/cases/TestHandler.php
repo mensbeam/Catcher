@@ -52,7 +52,7 @@ class TestHandler extends \PHPUnit\Framework\TestCase {
         // Just need to test forceExit for coverage purposes
         $c = new Catcher(new PlainTextHandler([ 'forceExit' => true, 'silent' => true ]));
         trigger_error('Ook!', \E_USER_ERROR);
-        $this->assertEquals(\E_USER_ERROR, $c->getLastThrowable()->getCode());
+        $this->assertSame(\E_USER_ERROR, $c->getLastThrowable()->getCode());
         $c->unregister();
     }
 
@@ -83,7 +83,7 @@ class TestHandler extends \PHPUnit\Framework\TestCase {
         // Just need to test forceOutputNow for coverage purposes
         $c = new Catcher(new PlainTextHandler([ 'forceOutputNow' => true, 'silent' => true ]));
         trigger_error('Ook!', \E_USER_ERROR);
-        $this->assertEquals(\E_USER_ERROR, $c->getLastThrowable()->getCode());
+        $this->assertSame(\E_USER_ERROR, $c->getLastThrowable()->getCode());
         $c->unregister();
     }
 
@@ -117,7 +117,7 @@ class TestHandler extends \PHPUnit\Framework\TestCase {
         ob_start();
         trigger_error('Ook!', \E_USER_NOTICE);
         ob_end_clean();
-        $this->assertEquals(\E_USER_NOTICE, $c->getLastThrowable()->getCode());
+        $this->assertSame(\E_USER_NOTICE, $c->getLastThrowable()->getCode());
         $c->unregister();
     }
 }

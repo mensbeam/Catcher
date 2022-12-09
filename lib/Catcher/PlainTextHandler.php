@@ -55,7 +55,7 @@ class PlainTextHandler extends Handler {
 
                 $args = '';
                 if (!empty($frame['args']) && $this->_backtraceArgFrameLimit >= $num) {
-                    $args = "\n" . preg_replace('/^/m', str_repeat(' ', $maxDigits) . '| ', var_export($frame['args'], true));
+                    $args = "\n" . preg_replace('/^/m', str_repeat(' ', $maxDigits) . '| ', print_r($frame['args'], true));
                 }
 
                 $template = "\n%{$maxDigits}d. %s";
@@ -79,7 +79,7 @@ class PlainTextHandler extends Handler {
 
         // The logger will handle timestamps itself.
         if ($this->_logger !== null) {
-            $this->log($controller->getThrowable(), $message);
+            $this->log($controller->getThrowable(), $output);
         }
 
         if (!$this->_silent && $this->_outputTime && $this->_timeFormat !== '') {
