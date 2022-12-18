@@ -17,7 +17,10 @@ use MensBeam\Foundation\Catcher\{
 use Eloquent\Phony\Phpunit\Phony,
     Psr\Log\LoggerInterface;
 
-
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
 class TestPlainTextHandler extends \PHPUnit\Framework\TestCase {
     /**
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
@@ -45,13 +48,26 @@ class TestPlainTextHandler extends \PHPUnit\Framework\TestCase {
         $o = $h->handle($c);
         $this->assertSame(Handler::CONTINUE, $o->controlCode);
         $this->assertSame(Handler::OUTPUT | Handler::NOW, $o->outputCode);
-        $this->assertStringContainsString('Caused by ↴', $o->output);
+        $this->assertStringContainsString('↳', $o->output);
         $l->critical->called();
     }
 
 
     /**
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::log
+     * 
+     * @covers \MensBeam\Foundation\Catcher\Error::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
+     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
+     * @covers \MensBeam\Foundation\Catcher\Handler::handle
+     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeThrowable
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
      */
     public function testMethod_log(): void {
         $l = Phony::mock(LoggerInterface::class);

@@ -99,10 +99,31 @@ abstract class Handler {
         $this->outputBuffer = [];
     }
 
+    public function getOption(string $name): mixed {
+        $class = get_class($this);
+        if (!property_exists($class, "_$name")) {
+            trigger_error(sprintf('Undefined option in %s: %s', $class, $name), \E_USER_WARNING);
+            return null;
+        }
+
+        $name = "_$name";
+        return $this->$name;
+    }
+
     public function handle(ThrowableController $controller): HandlerOutput {
         $output = $this->handleCallback($controller);
         $this->outputBuffer[] = $output;
         return $output;
+    }
+
+    public function setOption(string $name, mixed $value): void {
+        $class = get_class($this);
+        if (!property_exists($class, "_$name")) {
+            trigger_error(sprintf('Undefined option in %s: %s', $class, $name), \E_USER_WARNING);
+        }
+
+        $name = "_$name";
+        $this->$name = $value;
     }
 
 

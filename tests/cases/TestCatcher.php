@@ -16,7 +16,10 @@ use MensBeam\Foundation\Catcher\{
 };
 use Eloquent\Phony\Phpunit\Phony;
 
-
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
 class TestCatcher extends \PHPUnit\Framework\TestCase {
     /**
      * @covers \MensBeam\Foundation\Catcher::__construct
@@ -30,6 +33,8 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      */
     public function testMethod___construct(): void {
         $c = new Catcher();
+        $c->preventExit = true;
+        $c->throwErrors = false;
         $this->assertSame('MensBeam\Foundation\Catcher', $c::class);
         $this->assertSame(1, count($c->getHandlers()));
         $this->assertSame(PlainTextHandler::class, $c->getHandlers()[0]::class);
@@ -40,6 +45,8 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
             new HTMLHandler(),
             new JSONHandler()
         );
+        $c->preventExit = true;
+        $c->throwErrors = false;
         $this->assertSame('MensBeam\Foundation\Catcher', $c::class);
         $this->assertSame(3, count($c->getHandlers()));
         $h = $c->getHandlers();
@@ -74,6 +81,8 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      */
     public function testMethod_getLastThrowable(): void {
         $c = new Catcher(new PlainTextHandler([ 'silent' => true ]));
+        $c->preventExit = true;
+        $c->throwErrors = false;
         trigger_error('Ook!', \E_USER_WARNING);
         $this->assertSame(\E_USER_WARNING, $c->getLastThrowable()->getCode());
         $c->unregister();
@@ -95,11 +104,15 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
 
         $h = new PlainTextHandler();
         $c = new Catcher($h, $h);
+        $c->preventExit = true;
+        $c->throwErrors = false;
         $c->unregister();
         $this->assertSame(\E_USER_WARNING, $e);
         $e = null;
 
         $c = new Catcher();
+        $c->preventExit = true;
+        $c->throwErrors = false;
         $c->unregister();
         $c->pushHandler($h, $h);
         $this->assertSame(\E_USER_WARNING, $e);
@@ -136,6 +149,8 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
             new JSONHandler()
         ];
         $c = new Catcher(...$h);
+        $c->preventExit = true;
+        $c->throwErrors = false;
         $hh = $c->popHandler();
         $this->assertSame($h[2], $hh);
         $hh = $c->popHandler();
@@ -163,6 +178,8 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      */
     public function testMethod_register(): void {
         $c = new Catcher();
+        $c->preventExit = true;
+        $c->throwErrors = false;
         $this->assertTrue($c->isRegistered());
         $this->assertFalse($c->register());
         $c->unregister();
@@ -181,6 +198,8 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      */
     public function testMethod_setHandlers(): void {
         $c = new Catcher();
+        $c->preventExit = true;
+        $c->throwErrors = false;
         $c->setHandlers(new PlainTextHandler());
         $h = $c->getHandlers();
         $this->assertSame(1, count($h));
@@ -205,6 +224,8 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
             new JSONHandler()
         ];
         $c = new Catcher(...$h);
+        $c->preventExit = true;
+        $c->throwErrors = false;
         $c->unregister();
         $hh = $c->shiftHandler();
         $this->assertSame($h[0], $hh);
@@ -231,6 +252,8 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      */
     public function testMethod_unregister(): void {
         $c = new Catcher();
+        $c->preventExit = true;
+        $c->throwErrors = false;
         $c->unregister();
         $this->assertFalse($c->unregister());
     }
@@ -248,6 +271,8 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      */
     public function testMethod_unshiftHandler(): void {
         $c = new Catcher(new PlainTextHandler());
+        $c->preventExit = true;
+        $c->throwErrors = false;
         $c->unshiftHandler(new JSONHandler(), new HTMLHandler(), new PlainTextHandler());
         $h = $c->getHandlers();
         $this->assertSame(4, count($h));
@@ -272,6 +297,8 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         $c->unregister();
 
         $c = new Catcher();
+        $c->preventExit = true;
+        $c->throwErrors = false;
         $c->unregister();
 
         $e = null;
@@ -310,6 +337,8 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      */
     public function testMethod_handleError(): void {
         $c = new Catcher(new PlainTextHandler([ 'silent' => true ]));
+        $c->preventExit = true;
+        $c->throwErrors = false;
 
         trigger_error('Ook!', \E_USER_NOTICE);
         $t = $c->getLastThrowable();
@@ -348,6 +377,8 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
             $h3->get()
         ]);
         $c = $h->get();
+        $c->preventExit = true;
+        $c->throwErrors = false;
 
         trigger_error('Ook!', \E_USER_ERROR);
 
@@ -355,7 +386,16 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         $h2->dispatch->called();
         $h3->dispatch->called();
 
+        $c->throwErrors = true;
+        try {
+            trigger_error('Ook!', \E_USER_ERROR);
+        } catch (\Throwable $t) {
+            $this->assertInstanceOf(Error::class, $t);
+            $this->assertSame(\E_USER_ERROR, $t->getCode());
+        }
+        
         $c->unregister();
+        $c->throwErrors = false;
     }
 
     /**
@@ -383,22 +423,25 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      */
     public function testMethod_handleThrowable(): void {
         $c = new Catcher(new PlainTextHandler([ 'silent' => true, 'forceBreak' => true ]));
+        $c->preventExit = true;
+        $c->throwErrors = false;
         trigger_error('Ook!', \E_USER_ERROR);
         $t = $c->getLastThrowable();
         $this->assertSame(Error::class, $t::class);
         $this->assertSame(\E_USER_ERROR, $t->getCode());
         $c->unregister();
 
-        Catcher::$preventExit = false;
         $h = Phony::partialMock(Catcher::class, [ new PlainTextHandler([ 'silent' => true ]) ]);
         $h->exit->returns();
         $c = $h->get();
+        $c->preventExit = false;
+        $c->throwErrors = false;
+
         trigger_error('Ook!', \E_USER_ERROR);
         $t = $c->getLastThrowable();
         $this->assertSame(Error::class, $t::class);
         $this->assertSame(\E_USER_ERROR, $t->getCode());
         $c->unregister();
-        Catcher::$preventExit = true;
     }
 
     /**
@@ -427,6 +470,8 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      */
     public function testMethod_handleShutdown(): void {
         $c = new Catcher();
+        $c->preventExit = true;
+        $c->throwErrors = false;
         $c->handleShutdown();
         $p = new \ReflectionProperty($c, 'isShuttingDown');
         $p->setAccessible(true);
@@ -434,6 +479,8 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         $c->unregister();
 
         $c = new Catcher();
+        $c->preventExit = true;
+        $c->throwErrors = false;
         $c->unregister();
         $c->handleShutdown();
         $p = new \ReflectionProperty($c, 'isShuttingDown');

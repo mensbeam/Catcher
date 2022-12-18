@@ -14,7 +14,10 @@ use MensBeam\Foundation\Catcher\{
     ThrowableController
 };
 
-
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
 class TestThrowableController extends \PHPUnit\Framework\TestCase {
     /**
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
@@ -43,6 +46,8 @@ class TestThrowableController extends \PHPUnit\Framework\TestCase {
      */
     public function testMethod_getErrorType(): void {
         $c = new Catcher(new PlainTextHandler([ 'outputToStderr' => false ]));
+        $c->preventExit = true;
+        $c->throwErrors = false;
         ob_start();
         trigger_error('Ook!', \E_USER_DEPRECATED);
         ob_end_clean();
@@ -50,6 +55,8 @@ class TestThrowableController extends \PHPUnit\Framework\TestCase {
         $c->unregister();
 
         $c = new Catcher(new PlainTextHandler([ 'outputToStderr' => false ]));
+        $c->preventExit = true;
+        $c->throwErrors = false;
         ob_start();
         trigger_error('Ook!', \E_USER_WARNING);
         ob_end_clean();

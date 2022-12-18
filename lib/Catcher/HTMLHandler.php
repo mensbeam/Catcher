@@ -12,14 +12,21 @@ namespace MensBeam\Foundation\Catcher;
 class HTMLHandler extends Handler {
     public const CONTENT_TYPE = 'text/html';
 
+    
+    /** The DOMDocument errors should be inserted into */
     protected ?\DOMDocument $_document = null;
+    /** The XPath path to the element where the errors should be inserted */
+    protected string $_errorPath = '/html/body';
     /** If true the handler will output times to the output; defaults to true */
     protected bool $_outputTime = true;
     /** The PHP-standard date format which to use for times printed to output */
     protected string $_timeFormat = 'H:i:s';
 
+    protected \DOMXPath $xpath;
+    protected \DOMElement $errorLocation;
 
 
+    
 
     public function __construct(array $options = []) {
         parent::__construct($options);
@@ -34,48 +41,50 @@ class HTMLHandler extends Handler {
             </html>
             HTML);
         }
+
+        $this->xpath = new \DOMXPath($this->_document);
+        $location = $this->xpath->query($this->_errorPath);
+        if (count($location) === 0 || !$location->item(0) instanceof \DOMElement) {
+            throw new \InvalidArgumentException('Option "errorPath" must correspond to a location that is an instance of \DOMElement');
+        }
+        $this->errorLocation = $location->item(0);
     }
 
 
 
 
-    protected function buildThrowable(ThrowableController $controller): \DOMElement {
+    protected function buildThrowable(ThrowableController $controller): \DOMDocumentFragment {
         $throwable = $controller->getThrowable();
-        $p = $this->_document->createElement('p');
+        $frag = $this->_document->createDocumentFragment();
 
+        $b = $this->_document->createElement('b');
+        $type = $controller->getErrorType();
         $class = $throwable::class;
-        if ($throwable instanceof \Error) {
-            $type = $controller->getErrorType();
-            if ($type !== null) {
-                $b = $this->_document->createElement('b');
-                $b->appendChild($this->_document->createTextNode($type));
-                $p->appendChild($b);
-                $p->appendChild($this->_document->createTextNode(' ('));
-                $code = $this->_document->createElement('code');
-                $code->appendChild($this->_document->createTextNode($throwable::class));
-                $p->appendChild($code);
-                $p->appendChild($this->_document->createTextNode(')'));
-            } else {
-                $code = $this->_document->createElement('code');
-                $code->appendChild($this->_document->createTextNode($throwable::class));
-                $p->appendChild($code);
-            }
+        $b->appendChild($this->_document->createTextNode($type ?? $class));
+        if ($type !== null) {
+            $b->firstChild->textContent .= ' ';
+            $code = $this->_document->createElement('code');
+            $code->appendChild($this->_document->createTextNode("($class)"));
+            $b->appendChild($code);
         }
+        $frag->appendChild($b);
 
-        $p->appendChild($this->_document->createTextNode(': '));
+        $frag->appendChild($this->_document->createTextNode(': '));
         $i = $this->_document->createElement('i');
         $i->appendChild($this->_document->createTextNode($throwable->getMessage()));
-        $p->appendChild($i);
-        $p->appendChild($this->_document->createTextNode(' in file '));
+        $frag->appendChild($i);
+        $frag->appendChild($this->_document->createTextNode(' in file '));
         $code = $this->_document->createElement('code');
         $code->appendChild($this->_document->createTextNode($throwable->getFile()));
-        $p->appendChild($code);
-        $p->appendChild($this->_document->createTextNode(' on line ' . $throwable->getLine()));
-        return $p;
+        $frag->appendChild($code);
+        $frag->appendChild($this->_document->createTextNode(' on line ' . $throwable->getLine()));
+        return $frag;
     }
 
     protected function dispatchCallback(): void {
-        $body = $this->_document->getElementsByTagName('body')[0];
+        $ul = $this->_document->createElement('ul');
+        $this->errorLocation->appendChild($ul);
+
         $allSilent = true;
         foreach ($this->outputBuffer as $o) {
             if ($o->outputCode & self::SILENT) {
@@ -83,7 +92,9 @@ class HTMLHandler extends Handler {
             }
 
             $allSilent = false;
-            $body->appendChild($o->output);
+            $li = $this->_document->createElement('li');
+            $li->appendChild($o->output);
+            $ul->appendChild($li);
         }
 
         if (!$allSilent) {
@@ -97,81 +108,102 @@ class HTMLHandler extends Handler {
         if ($this->_outputTime && $this->_timeFormat !== '') {
             $p = $this->_document->createElement('p');
             $time = $this->_document->createElement('time');
-            $time->appendChild($this->_document->createTextNode((new \DateTime())->format($this->_timeFormat)));
+            $now = new \DateTimeImmutable();
+            $tz = $now->getTimezone()->getName();
+            if ($tz !== 'UTC' || !in_array($this->_timeFormat, [ 'c', 'Y-m-d\TH:i:sO', 'Y-m-d\TH:i:sP', 'Y-m-d\TH:i:s\Z' ])) {
+                $n = ($tz !== 'UTC') ? $now->setTimezone(new \DateTimeZone('UTC')) : $now;
+                $time->setAttribute('datetime', $n->format('Y-m-d\TH:i:s\Z'));
+            }
+            $time->appendChild($this->_document->createTextNode($now->format($this->_timeFormat)));
             $p->appendChild($time);
             $frag->appendChild($p);
+
+            $ip = $this->_document->createElement('div');
+            $frag->appendChild($ip);
+        } else {
+            $ip = $frag;
         }
 
-        $frag->appendChild($this->buildThrowable($controller));
+        $p = $this->_document->createElement('p');
+        $p->appendChild($this->buildThrowable($controller));
+        $ip->appendChild($p);
+
         if ($this->_outputPrevious) {
-            $prevController = $controller->getPrevious();
-            while ($prevController) {
-                $p = $this->_document->createElement('p');
-                $small = $this->_document->createElement('small');
-                $small->appendChild($this->_document->createTextNode('Caused by ↴'));
-                $p->appendChild($small);
-                $frag->appendChild($p);
-                $frag->appendChild($this->buildThrowable($prevController));
-                $prevController = $prevController->getPrevious();
+            $prev = $controller->getPrevious();
+            if ($prev !== null) {
+                $ul = $this->_document->createElement('ul');
+                $ip->appendChild($ul);
+                $f = null;
+                while ($prev) {
+                    if ($f !== null) {
+                        $p = $this->_document->createElement('p');
+                        $p->appendChild($f);
+                        $li->appendChild($p);
+                        $ul = $this->_document->createElement('ul');
+                        $li->appendChild($ul);
+                    }
+
+                    $li = $this->_document->createElement('li');
+                    $ul->appendChild($li);
+                    $f = $this->_document->createDocumentFragment();
+                    $span = $this->_document->createElement('span');
+                    $span->appendChild($this->_document->createTextNode('Caused by:'));
+                    $f->appendChild($span);
+                    $f->appendChild($this->_document->createTextNode(' '));
+                    $f->appendChild($this->buildThrowable($prev));
+
+                    $prev = $prev->getPrevious();
+                }
+
+                $li->appendChild($f);
             }
         }
 
         if ($this->_outputBacktrace) {
             $frames = $controller->getFrames();
-            $p = $this->_document->createElement('p');
-            $p->appendChild($this->_document->createTextNode('Stack trace:'));
-            $frag->appendChild($p);
-
             if (count($frames) > 0) {
+                $p = $this->_document->createElement('p');
+                $p->appendChild($this->_document->createTextNode('Stack trace:'));
+                $ip->appendChild($p);
+
                 $ol = $this->_document->createElement('ol');
-                $frag->appendChild($ol);
-                $num = 1;
+                $ip->appendChild($ol);
+
+                $num = 0;
                 foreach ($frames as $frame) {
                     $li = $this->_document->createElement('li');
-                    $args = (!empty($frame['args']) && $this->_backtraceArgFrameLimit >= $num);
-                    $t = ($args) ? $this->_document->createElement('p') : $li;
+                    $ol->appendChild($li);
 
-                    if (!empty($frame['error'])) {
-                        $b = $this->_document->createElement('b');
-                        $b->appendChild($this->_document->createTextNode($frame['error']));
-                        $t->appendChild($b);
-                        $t->appendChild($this->_document->createTextNode(' ('));
-                        $code = $this->_document->createElement('code');
-                        $code->appendChild($this->_document->createTextNode($frame['class']));
-                        $t->appendChild($code);
-                        $t->appendChild($this->_document->createTextNode(')'));
-                    } elseif (!empty($frame['class'])) {
-                        $code = $this->_document->createElement('code');
-                        $code->appendChild($this->_document->createTextNode($frame['class']));
-                        $t->appendChild($code);
-                    }
-                    
-                    $class = $frame['class'] ?? '';
-                    $function = $frame['function'] ?? '';
-                    if ($function) {
-                        if ($class) {
-                            $code->firstChild->textContent .= "::{$function}()";
-                        } else {
-                            $code = $this->_document->createElement('code');
-                            $code->appendChild($this->_document->createTextNode("{$function}()"));
-                            $t->appendChild($code);
-                        }
-                    }
-
-                    $t->appendChild($this->_document->createTextNode(' '));
-                    $i = $this->_document->createElement('i');
-                    $i->appendChild($this->_document->createTextNode($frame['file']));
-                    $t->appendChild($i);
-                    $t->appendChild($this->_document->createTextNode(":{$frame['line']}"));
-    
+                    $args = (isset($frame['args']) && $this->_backtraceArgFrameLimit >= ++$num);
                     if ($args) {
+                        $t = $this->_document->createElement('p');
                         $li->appendChild($t);
+                    } else {
+                        $t = $li;
+                    }
+
+                    $b = $this->_document->createElement('b');
+                    $code = $this->_document->createElement('code');
+                    $b->appendChild($code);
+                    $t->appendChild($b);
+                    
+                    $text = $frame['error'] ?? $frame['class'] ?? '';
+                    if (isset($frame['function'])) {
+                        $text = ((isset($frame['class'])) ? '::' : '') . "{$frame['function']}()";
+                    }
+                    $code->appendChild($this->_document->createTextNode($text));
+
+                    $t->appendChild($this->_document->createTextNode("\u{00a0}\u{00a0}"));
+                    $code = $this->_document->createElement('code');
+                    $code->appendChild($this->_document->createTextNode($frame['file']));
+                    $t->appendChild($code);
+                    $t->appendChild($this->_document->createTextNode(":{$frame['line']}"));
+
+                    if ($args) {
                         $pre = $this->_document->createElement('pre');
-                        $pre->appendChild($this->_document->createTextNode(var_export($frame['args'], true)));
+                        $pre->appendChild($this->_document->createTextNode(print_r($frame['args'], true)));
                         $li->appendChild($pre);
                     }
-
-                    $ol->appendChild($li);
                 }
             }
         }

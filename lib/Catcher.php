@@ -17,7 +17,9 @@ use MensBeam\Foundation\Catcher\{
 
 class Catcher {
     /** When set to true Catcher won't exit when instructed */
-    public static $preventExit = false;
+    public bool $preventExit = false;
+    /** When set to true Catcher will throw errors as throwables */
+    public bool $throwErrors = true;
 
     /** 
      * Array of handlers the exceptions are passed to
@@ -154,12 +156,18 @@ class Catcher {
      */
     public function handleError(int $code, string $message, ?string $file = null, ?int $line = null): bool {
         if ($code !== 0 && error_reporting()) {
-            $this->handleThrowable(new Error($message, $code, $file, $line));
+            $error = new Error($message, $code, $file, $line);
+            if ($this->throwErrors) {
+                throw $error;
+            } else {
+                $this->handleThrowable($error);
+            }
+
             return true;
         }
         
         // If preventing exit we don't want a false here to halt processing
-        return (self::$preventExit);
+        return ($this->preventExit);
     }
 
     /** 
@@ -196,7 +204,7 @@ class Catcher {
 
             // Don't want to exit here when shutting down so any shutdown functions further 
             // down the stack still run.
-            if (!self::$preventExit && !$this->isShuttingDown) {
+            if (!$this->preventExit && !$this->isShuttingDown) {
                 $this->exit($throwable->getCode());
             }
         }
@@ -214,6 +222,7 @@ class Catcher {
             return;
         }
 
+        $this->throwErrors = false;
         $this->isShuttingDown = true;
         if ($error = $this->getLastError()) {
             if (in_array($error['type'], [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_CORE_WARNING, \E_COMPILE_ERROR, \E_COMPILE_WARNING ])) {

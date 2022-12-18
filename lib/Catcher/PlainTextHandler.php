@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 namespace MensBeam\Foundation\Catcher;
-use \Psr\Log\LoggerInterface;
+use Psr\Log\LoggerInterface;
 
 
 class PlainTextHandler extends Handler {
@@ -37,15 +37,17 @@ class PlainTextHandler extends Handler {
         $output = $this->serializeThrowable($controller);
         if ($this->_outputPrevious) {
             $prevController = $controller->getPrevious();
+            $indent = '';
             while ($prevController) {
-                $output .= sprintf("\n\nCaused by ↴\n%s", $this->serializeThrowable($prevController));
+                $output .= sprintf("\n%s↳ %s", $indent, $this->serializeThrowable($prevController));
                 $prevController = $prevController->getPrevious();
+                $indent .= '  ';
             }
         }
 
         if ($this->_outputBacktrace) {
             $frames = $controller->getFrames();
-            $output .= "\nStack trace:";
+            $output .= "\n\nStack trace:";
 
             $num = 1;
             $maxDigits = strlen((string)count($frames));
@@ -75,6 +77,8 @@ class PlainTextHandler extends Handler {
                     $args
                 );
             }
+
+            $output = rtrim($output, "\n");
         }
 
         // The logger will handle timestamps itself.
