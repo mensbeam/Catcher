@@ -32,14 +32,11 @@ class TestThrowableController extends \PHPUnit\Framework\TestCase {
      * @covers \MensBeam\Foundation\Catcher\Error::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
-     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
      * @covers \MensBeam\Foundation\Catcher\Handler::handle
      * @covers \MensBeam\Foundation\Catcher\Handler::print
-     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeThrowable
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeOutputThrowable
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
@@ -61,6 +58,24 @@ class TestThrowableController extends \PHPUnit\Framework\TestCase {
         trigger_error('Ook!', \E_USER_WARNING);
         ob_end_clean();
         $this->assertSame(\E_USER_WARNING, $c->getLastThrowable()->getCode());
+        $c->unregister();
+
+        $c = new Catcher(new PlainTextHandler([ 'outputToStderr' => false ]));
+        $c->preventExit = true;
+        $c->throwErrors = false;
+        ob_start();
+        trigger_error('Ook!', \E_USER_NOTICE);
+        ob_end_clean();
+        $this->assertSame(\E_USER_NOTICE, $c->getLastThrowable()->getCode());
+        $c->unregister();
+
+        $c = new Catcher(new PlainTextHandler([ 'outputToStderr' => false ]));
+        $c->preventExit = true;
+        $c->throwErrors = false;
+        ob_start();
+        trigger_error('Ook!', \E_USER_ERROR);
+        ob_end_clean();
+        $this->assertSame(\E_USER_ERROR, $c->getLastThrowable()->getCode());
         $c->unregister();
 
         // These others will be tested by invoking the method directly
@@ -89,6 +104,9 @@ class TestThrowableController extends \PHPUnit\Framework\TestCase {
         $c = new ThrowableController(new Error('Ook!'));
         $this->assertNull($c->getErrorType());
         $c = new ThrowableController(new \Exception('Ook!'));
+        $this->assertNull($c->getErrorType());
+
+        // For code coverage purposes.
         $this->assertNull($c->getErrorType());
     }
 
@@ -122,7 +140,7 @@ class TestThrowableController extends \PHPUnit\Framework\TestCase {
 
         $f = false;
         try {
-            throw new \Exception(message: 'Ook!', previous: new Error('Ook!', \E_ERROR));
+            throw new \Exception(message: 'Ook!', previous: new Error(message: 'Ook!', code: \E_ERROR, previous: new \Exception('Ook!')));
         } catch (\Throwable $t) {
             $c = new ThrowableController($t);
             $f = $c->getFrames();
@@ -164,5 +182,10 @@ class TestThrowableController extends \PHPUnit\Framework\TestCase {
         // For code coverage purposes; should use the cached value instead of calculating 
         // the frames over again.
         $f = $c->getFrames();
+
+        // Lastly test for a RangeException
+        $this->expectException(\RangeException::class);
+        $c = new ThrowableController(new \Exception('Ook!'));
+        $c->getFrames(-1);
     }
 }

@@ -17,21 +17,18 @@ use MensBeam\Foundation\Catcher\{
 use Eloquent\Phony\Phpunit\Phony,
     Psr\Log\LoggerInterface;
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
+
 class TestPlainTextHandler extends \PHPUnit\Framework\TestCase {
     /**
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
      * 
      * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
-     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
+     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
      * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::log
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeThrowable
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeOutputThrowable
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getFrames
@@ -39,16 +36,22 @@ class TestPlainTextHandler extends \PHPUnit\Framework\TestCase {
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
      */
     public function testMethod_handleCallback(): void {
-        $c = new ThrowableController(new \Exception(message: 'Ook!', previous: new \Error('Eek!')));
+        $c = new ThrowableController(new \Exception(message: 'Ook!', previous: new \Error(message: 'Eek!', previous: new Error(message: 'Ack!', code: \E_USER_ERROR))));
         $l = Phony::mock(LoggerInterface::class);
         $h = new PlainTextHandler([ 
             'logger' => $l->get(), 
-            'outputBacktrace' => true 
+            'outputBacktrace' => true,
+            'outputToStderr' => false
         ]);
         $o = $h->handle($c);
-        $this->assertSame(Handler::CONTINUE, $o->controlCode);
-        $this->assertSame(Handler::OUTPUT | Handler::NOW, $o->outputCode);
-        $this->assertStringContainsString('↳', $o->output);
+        $this->assertSame(Handler::CONTINUE, $o['controlCode']);
+        $this->assertSame(Handler::OUTPUT | Handler::NOW, $o['outputCode']);
+        $this->assertTrue(isset($o['previous']));
+
+        ob_start();
+        $h->dispatch();
+        ob_end_clean();
+
         $l->critical->called();
     }
 
@@ -58,12 +61,11 @@ class TestPlainTextHandler extends \PHPUnit\Framework\TestCase {
      * 
      * @covers \MensBeam\Foundation\Catcher\Error::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
-     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
+     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
      * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeThrowable
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
@@ -71,7 +73,10 @@ class TestPlainTextHandler extends \PHPUnit\Framework\TestCase {
      */
     public function testMethod_log(): void {
         $l = Phony::mock(LoggerInterface::class);
-        $h = new PlainTextHandler([ 'logger' => $l->get() ]);
+        $h = new PlainTextHandler([ 
+            'logger' => $l->get(),
+            'outputToStderr' => false
+        ]);
 
         $e = [
             'notice' => [
@@ -99,14 +104,25 @@ class TestPlainTextHandler extends \PHPUnit\Framework\TestCase {
         foreach ($e as $k => $v) {
             foreach ($v as $vv) {
                 $h->handle(new ThrowableController(new Error('Ook!', $vv)));
+
+                ob_start();
+                $h->dispatch();
+                ob_end_clean();
+
                 $l->$k->called();
             }
         }
 
         $h->handle(new ThrowableController(new \PharException('Ook!')));
+        ob_start();
+        $h->dispatch();
+        ob_end_clean();
         $l->alert->called();
 
         $h->handle(new ThrowableController(new \RuntimeException('Ook!')));
+        ob_start();
+        $h->dispatch();
+        ob_end_clean();
         $l->alert->called();
     }
 }

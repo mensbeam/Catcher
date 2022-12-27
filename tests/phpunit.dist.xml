@@ -20,6 +20,7 @@
       <file>cases/TestCatcher.php</file>
       <file>cases/TestHandler.php</file>
       <file>cases/TestHTMLHandler.php</file>
+      <file>cases/TestJSONHandler.php</file>
       <file>cases/TestPlainTextHandler.php</file>
       <file>cases/TestThrowableController.php</file>
     </testsuite>

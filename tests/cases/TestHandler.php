@@ -11,55 +11,74 @@ use MensBeam\Foundation\Catcher;
 use MensBeam\Foundation\Catcher\{
     Error,
     HTMLHandler,
+    PlainTextHandler,
     JSONHandler,
-    PlainTextHandler
+    ThrowableController
 };
 use Eloquent\Phony\Phpunit\Phony;
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
+
 class TestHandler extends \PHPUnit\Framework\TestCase {
     /**
      * @covers \MensBeam\Foundation\Catcher\Handler::__construct
      */
     public function testMethod___construct__exception(): void {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(\RangeException::class);
         new PlainTextHandler([ 'httpCode' => 42 ]);
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
+     * @covers \MensBeam\Foundation\Catcher\Handler::cleanOutputThrowable
      * 
-     * @covers \MensBeam\Foundation\Catcher::__construct
-     * @covers \MensBeam\Foundation\Catcher::handleError
-     * @covers \MensBeam\Foundation\Catcher::handleThrowable
-     * @covers \MensBeam\Foundation\Catcher::pushHandler
-     * @covers \MensBeam\Foundation\Catcher::register
-     * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Catcher\Error::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
      * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
      * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
-     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeThrowable
+     * @covers \MensBeam\Foundation\Catcher\Handler::handleCallback
+     * @covers \MensBeam\Foundation\Catcher\Handler::print
+     * @covers \MensBeam\Foundation\Catcher\JSONHandler::dispatchCallback
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getFrames
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
      */
-    public function testMethod__getControlCode(): void {
-        // Just need to test forceExit for coverage purposes
-        $c = new Catcher(new PlainTextHandler([ 'forceExit' => true, 'silent' => true ]));
-        $c->preventExit = true;
-        $c->throwErrors = false;
-        trigger_error('Ook!', \E_USER_ERROR);
-        $this->assertSame(\E_USER_ERROR, $c->getLastThrowable()->getCode());
-        $c->unregister();
+    public function testMethod__cleanOutputThrowable(): void {
+        // Just need to test coverage here; TestJSONHandler covers this one thoroughly.
+        $c = new ThrowableController(new \Exception(message: 'Ook!', previous: new \Error('Eek!')));
+        $h = new JSONHandler([ 
+            'outputBacktrace' => true,
+            'outputToStderr' => false
+        ]);
+        $o = $h->handle($c);
+
+        ob_start();
+        $h->dispatch();
+        ob_end_clean();
+
+        $this->assertTrue(isset($o['frames']));
+    }
+
+    /**
+     * @covers \MensBeam\Foundation\Catcher\Handler::handle
+     * 
+     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
+     * @covers \MensBeam\Foundation\Catcher\Handler::handleCallback
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getFrames
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
+     */
+    public function testMethod__handle(): void {
+        // Just need to test backtrace handling. The rest has already been covered by prior tests.
+        $c = new ThrowableController(new \Exception(message: 'Ook!', previous: new \Error(message: 'Eek!', previous: new Error(message: 'Eek!', code: \E_USER_ERROR))));
+        $h = new HTMLHandler([ 
+            'outputBacktrace' => true,
+            'outputToStderr' => true
+        ]);
+        $this->assertTrue(isset($h->handle($c)['frames']));
     }
 
     /**
@@ -74,13 +93,8 @@ class TestHandler extends \PHPUnit\Framework\TestCase {
      * @covers \MensBeam\Foundation\Catcher\Error::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
-     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
      * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeThrowable
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
@@ -97,6 +111,11 @@ class TestHandler extends \PHPUnit\Framework\TestCase {
         $c->unregister();
     }
 
+    /**
+     * @covers \MensBeam\Foundation\Catcher\Handler::setOption
+     * 
+     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     */
     public function testMethod__setOption(): void {
         $h = new PlainTextHandler([ 'forceExit' => true, 'silent' => true ]);
         $h->setOption('forceExit', false);
@@ -104,7 +123,6 @@ class TestHandler extends \PHPUnit\Framework\TestCase {
         $r->setAccessible(true);
         $this->assertFalse($r->getValue($h));
 
-        //$h = Phony::partialMock(PlainTextHandler::class, [ [ 'silent' => true ] ]);
         $m = Phony::partialMock(Catcher::class, [ 
             $h
         ]);
@@ -115,39 +133,6 @@ class TestHandler extends \PHPUnit\Framework\TestCase {
         $h->setOption('ook', 'FAIL');
         $m->handleError->called();
 
-        $c->unregister();
-    }
-
-    /**
-     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
-     * 
-     * @covers \MensBeam\Foundation\Catcher::__construct
-     * @covers \MensBeam\Foundation\Catcher::handleError
-     * @covers \MensBeam\Foundation\Catcher::handleThrowable
-     * @covers \MensBeam\Foundation\Catcher::pushHandler
-     * @covers \MensBeam\Foundation\Catcher::register
-     * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Catcher\Error::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
-     * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeThrowable
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
-     */
-    public function testMethod__getOutputCode(): void {
-        // Just need to test forceOutputNow for coverage purposes
-        $c = new Catcher(new PlainTextHandler([ 'forceOutputNow' => true, 'silent' => true ]));
-        $c->preventExit = true;
-        $c->throwErrors = false;
-        trigger_error('Ook!', \E_USER_ERROR);
-        $this->assertSame(\E_USER_ERROR, $c->getLastThrowable()->getCode());
         $c->unregister();
     }
 
@@ -163,13 +148,10 @@ class TestHandler extends \PHPUnit\Framework\TestCase {
      * @covers \MensBeam\Foundation\Catcher\Error::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
-     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
      * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeThrowable
+     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeOutputThrowable
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious

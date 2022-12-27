@@ -88,9 +88,12 @@ class ThrowableController {
     }
 
     /** Gets backtrace frames */
-    public function getFrames(): array {
+    public function getFrames(int $argFrameLimit = \PHP_INT_MAX): array {
         if ($this->frames !== null) {
             return $this->frames;
+        }
+        if ($argFrameLimit < 0) {
+            throw new \RangeException('Argument argFrameLimit cannot be less than 0');
         }
 
         if (
@@ -149,7 +152,7 @@ class ThrowableController {
 
         // Add a frame for the throwable to the beginning of the array
         $f = [
-            'file' => $this->throwable->getFile(),
+            'file' => $this->throwable->getFile() ?: '[UNKNOWN]',
             'line' => (int)$this->throwable->getLine(),
             'class' => $this->throwable::class,
             'args' => [
@@ -159,10 +162,10 @@ class ThrowableController {
 
         // Add the error code and type if it is an Error.
         if ($this->throwable instanceof \Error) {
-            $error = $this->getErrorType();
-            if ($error !== null) {
+            $errorType = $this->getErrorType();
+            if ($errorType !== null) {
                 $f['code'] = $this->throwable->getCode(); 
-                $f['type'] = $error;
+                $f['errorType'] = $errorType;
             }
         }
 
@@ -185,6 +188,13 @@ class ThrowableController {
                 $temp[] = $f;
             }
             $frames = $temp;
+        }
+
+        // Lastly, remove all args past the specified limit.
+        if ($argFrameLimit !== \PHP_INT_MAX) {
+            for ($i = $argFrameLimit, $frameCount = count($frames); $i < $frameCount; $i++) {
+                unset($frames[$i]['args']);
+            }
         }
 
         $this->frames = $frames;

@@ -15,10 +15,7 @@ use MensBeam\Foundation\Catcher\{
     ThrowableController
 };
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
+
 class TestHTMLHandler extends \PHPUnit\Framework\TestCase {
     /**
      * @covers \MensBeam\Foundation\Catcher\HTMLHandler::__construct
@@ -31,67 +28,62 @@ class TestHTMLHandler extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::buildThrowable
+     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::buildOutputThrowable
      * 
      * @covers \MensBeam\Foundation\Catcher\Error::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
-     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
+     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
      * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
      * @covers \MensBeam\Foundation\Catcher\HTMLHandler::__construct
+     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::dispatchCallback
      * @covers \MensBeam\Foundation\Catcher\HTMLHandler::handleCallback
+     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::serializeDocument
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getFrames
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
      */
-    public function testMethod_buildThrowable(): void {
+    public function testMethod_buildOutputThrowable(): void {
         $c = new ThrowableController(new \Exception(message: 'Ook!', previous: new Error(message: 'Eek!', code: \E_USER_ERROR, previous: new Error(message: 'Ack!'))));
         $h = new HTMLHandler([
+            'backtraceArgFrameLimit' => 1,
             'outputBacktrace' => true,
-            'outputTime' => false
+            'outputToStderr' => false
         ]);
         $o = $h->handle($c);
-        $this->assertSame(Handler::CONTINUE, $o->controlCode);
-        $this->assertInstanceOf(\DOMDocumentFragment::class, $o->output);
+        $this->assertSame(Handler::CONTINUE, $o['controlCode']);
+
+        ob_start();
+        $h->dispatch();
+        ob_end_clean();
     }
 
     /**
      * @covers \MensBeam\Foundation\Catcher\HTMLHandler::dispatchCallback
      * 
-     * @covers \MensBeam\Foundation\Catcher\Error::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
      * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
-     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
      * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\Handler::print
-     * @covers \MensBeam\Foundation\Catcher\Handler::setOption
-     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::handleCallback
      * @covers \MensBeam\Foundation\Catcher\HTMLHandler::__construct
-     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::buildThrowable
-     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::handleCallback
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
      */
     public function testMethod_dispatchCallback(): void {
-        $c = new ThrowableController(new \Exception(message: 'Ook!', previous: new Error(message: 'Eek!', code: \E_USER_ERROR, previous: new \Error(message: 'Ack!'))));
+        $c = new ThrowableController(new \Exception(message: 'Ook!'));
         $h = new HTMLHandler([
-            'outputToStderr' => false
+            'backtraceArgFrameLimit' => 1,
+            'outputToStderr' => false,
+            'silent' => true
         ]);
         $h->handle($c);
 
         ob_start();
         $h->dispatch();
         $o = ob_get_clean();
-        $this->assertNotNull($o);
-
-        $h->setOption('silent', true);
-        $h->handle($c);
-        $h->dispatch();
+        $this->assertEmpty($o);
     }
 }

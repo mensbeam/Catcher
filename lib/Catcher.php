@@ -179,11 +179,11 @@ class Catcher {
         $controller = new ThrowableController($throwable);
         foreach ($this->handlers as $h) {
             $output = $h->handle($controller);
-            if ($output->outputCode & Handler::NOW) {
+            if ($output['outputCode'] & Handler::NOW) {
                 $h->dispatch();
             }
 
-            $controlCode = $output->controlCode;
+            $controlCode = $output['controlCode'];
             if ($controlCode & Handler::BREAK) {
                 break;
             }

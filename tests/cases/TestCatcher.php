@@ -16,10 +16,7 @@ use MensBeam\Foundation\Catcher\{
 };
 use Eloquent\Phony\Phpunit\Phony;
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
+
 class TestCatcher extends \PHPUnit\Framework\TestCase {
     /**
      * @covers \MensBeam\Foundation\Catcher::__construct
@@ -35,7 +32,6 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         $c = new Catcher();
         $c->preventExit = true;
         $c->throwErrors = false;
-        $this->assertSame('MensBeam\Foundation\Catcher', $c::class);
         $this->assertSame(1, count($c->getHandlers()));
         $this->assertSame(PlainTextHandler::class, $c->getHandlers()[0]::class);
         $c->unregister();
@@ -67,15 +63,13 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      * @covers \MensBeam\Foundation\Catcher::unregister
      * @covers \MensBeam\Foundation\Catcher\Error::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
      * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
-     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
      * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeThrowable
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
      */
@@ -316,22 +310,19 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      * 
      * @covers \MensBeam\Foundation\Catcher::__construct
      * @covers \MensBeam\Foundation\Catcher::getLastThrowable
-     * @covers \MensBeam\Foundation\Catcher::exit
      * @covers \MensBeam\Foundation\Catcher::handleThrowable
      * @covers \MensBeam\Foundation\Catcher::pushHandler
      * @covers \MensBeam\Foundation\Catcher::register
      * @covers \MensBeam\Foundation\Catcher::unregister
      * @covers \MensBeam\Foundation\Catcher\Error::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
      * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
-     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
      * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeThrowable
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
      */
@@ -409,14 +400,11 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      * @covers \MensBeam\Foundation\Catcher::unregister
      * @covers \MensBeam\Foundation\Catcher\Error::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
      * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
-     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
      * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeThrowable
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
@@ -456,14 +444,11 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      * @covers \MensBeam\Foundation\Catcher::unregister
      * @covers \MensBeam\Foundation\Catcher\Error::__construct
      * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
      * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::getControlCode
-     * @covers \MensBeam\Foundation\Catcher\Handler::getOutputCode
      * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\HandlerOutput::__construct
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
      * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeThrowable
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable

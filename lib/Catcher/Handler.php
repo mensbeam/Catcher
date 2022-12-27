@@ -55,10 +55,14 @@ abstract class Handler {
     protected bool $_outputBacktrace = false;
     /** If true the handler will output previous throwables; defaults to true */
     protected bool $_outputPrevious = true;
+    /** If true the handler will output times to the output; defaults to true */
+    protected bool $_outputTime = true;
     /** When the SAPI is cli output errors to stderr; defaults to true */
     protected bool $_outputToStderr = true;
     /** If true the handler will be silent and won't output */
     protected bool $_silent = false;
+    /** The PHP-standard date format which to use for timestamps in output */
+    protected string $_timeFormat = 'Y-m-d\TH:i:s.vO';
 
 
 
@@ -67,7 +71,7 @@ abstract class Handler {
         foreach ($options as $key => $value) {
             $key = "_$key";
             if ($key === '_httpCode' && is_int($value) && $value !== 200 && max(400, min($value, 600)) !== $value) {
-                throw new \InvalidArgumentException('Option "httpCode" can only be an integer of 200 or 400-599');
+                throw new \RangeException('Option "httpCode" can only be an integer of 200 or 400-599');
             }
 
             $this->$key = $value;
@@ -110,8 +114,35 @@ abstract class Handler {
         return $this->$name;
     }
 
-    public function handle(ThrowableController $controller): HandlerOutput {
-        $output = $this->handleCallback($controller);
+    public function handle(ThrowableController $controller): array {
+        $output = $this->buildOutputArray($controller);
+
+        if ($this->_outputBacktrace) {
+            $output['frames'] = $controller->getFrames(argFrameLimit: $this->_backtraceArgFrameLimit);
+        }
+        if ($this->_outputTime && $this->_timeFormat !== '') {
+            $output['time'] = new \DateTimeImmutable();
+        }
+
+        $code = self::CONTINUE;
+        if ($this->_forceBreak) {
+            $code = self::BREAK;
+        }
+        if ($this->_forceExit) {
+            $code |= self::EXIT;
+        }
+        $output['controlCode'] = $code;
+
+        $code = self::OUTPUT;
+        if ($this->_silent) {
+            $code = self::SILENT;
+        }
+        if ($this->_forceOutputNow) {
+            $code |= self::NOW;
+        }
+        $output['outputCode'] = $code;
+
+        $output = $this->handleCallback($output);
         $this->outputBuffer[] = $output;
         return $output;
     }
@@ -127,33 +158,52 @@ abstract class Handler {
     }
 
 
+    protected function buildOutputArray(ThrowableController $controller): array {
+        $throwable = $controller->getThrowable();
+
+        $output = [
+            'controller' => $controller,
+            'class' => $throwable::class,
+            'code' => $throwable->getCode(),
+            'file' => $throwable->getFile() ?: '[UNKNOWN]',
+            'line' => $throwable->getLine(),
+            'message' => $throwable->getMessage()
+        ];
+
+        if ($throwable instanceof Error) {
+            $output['errorType'] = $controller->getErrorType();
+        }
+
+        if ($this->_outputPrevious) {
+            $prevController = $controller->getPrevious();
+            if ($prevController) {
+                $output['previous'] = $this->buildOutputArray($prevController);
+            }
+        }
+
+        return $output;
+    }
+
+    protected function cleanOutputThrowable(array $outputThrowable): array {
+        unset($outputThrowable['controller']);
+        unset($outputThrowable['controlCode']);
+        unset($outputThrowable['outputCode']);
+
+        if (isset($outputThrowable['previous'])) {
+            $outputThrowable['previous'] = $this->cleanOutputThrowable($outputThrowable['previous']);
+        }
+        if (isset($outputThrowable['time'])) {
+            $outputThrowable['time'] = $outputThrowable['time']->format($this->_timeFormat);
+        }
+
+        return $outputThrowable;
+    }
+
     abstract protected function dispatchCallback(): void;
 
-    protected function getControlCode(): int {
-        $code = self::CONTINUE;
-        if ($this->_forceBreak) {
-            $code = self::BREAK;
-        }
-        if ($this->_forceExit) {
-            $code |= self::EXIT;
-        }
-        
-        return $code;
+    protected function handleCallback(array $output): array {
+        return $output;
     }
-
-    protected function getOutputCode(): int {
-        $code = self::OUTPUT;
-        if ($this->_silent) {
-            $code = self::SILENT;
-        }
-        if ($this->_forceOutputNow) {
-            $code |= self::NOW;
-        }
-
-        return $code;
-    }
-
-    abstract protected function handleCallback(ThrowableController $controller): HandlerOutput;
 
     protected function print(string $string): void {
         $string = "$string\n";

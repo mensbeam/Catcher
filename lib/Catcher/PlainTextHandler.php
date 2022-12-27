@@ -15,90 +15,25 @@ class PlainTextHandler extends Handler {
 
     /** The PSR-3 compatible logger in which to log to; defaults to null (no logging) */
     protected ?LoggerInterface $_logger = null;
-    /** If true the handler will output times to the output; defaults to true */
-    protected bool $_outputTime = true;
     /** The PHP-standard date format which to use for timestamps in output */
     protected string $_timeFormat = '[H:i:s]';
 
 
 
-
     protected function dispatchCallback(): void {
         foreach ($this->outputBuffer as $o) {
-            if ($o->outputCode & self::SILENT) {
+            if ($o['outputCode'] & self::SILENT) {
                 continue;
             }
 
-            $this->print($o->output);
+            $this->print($this->serializeOutputThrowable($o));
         }
     }
 
-    protected function handleCallback(ThrowableController $controller): HandlerOutput {
-        $output = $this->serializeThrowable($controller);
-        if ($this->_outputPrevious) {
-            $prevController = $controller->getPrevious();
-            $indent = '';
-            while ($prevController) {
-                $output .= sprintf("\n%s↳ %s", $indent, $this->serializeThrowable($prevController));
-                $prevController = $prevController->getPrevious();
-                $indent .= '  ';
-            }
-        }
-
-        if ($this->_outputBacktrace) {
-            $frames = $controller->getFrames();
-            $output .= "\n\nStack trace:";
-
-            $num = 1;
-            $maxDigits = strlen((string)count($frames));
-            foreach ($frames as $frame) {
-                $class = (!empty($frame['error'])) ? "{$frame['error']} ({$frame['class']})" : $frame['class'] ?? '';
-                $function = $frame['function'] ?? '';
-
-                $args = '';
-                if (!empty($frame['args']) && $this->_backtraceArgFrameLimit >= $num) {
-                    $args = "\n" . preg_replace('/^/m', str_repeat(' ', $maxDigits) . '| ', print_r($frame['args'], true));
-                }
-
-                $template = "\n%{$maxDigits}d. %s";
-                if ($class && $function) {
-                    $template .= '::';
-                }
-                $template .= ($function) ? '%s()' : '%s';
-                $template .= '  %s:%d%s';
-
-                $output .= sprintf(
-                    "$template\n",
-                    $num++,
-                    $class,
-                    $function,
-                    $frame['file'],
-                    $frame['line'],
-                    $args
-                );
-            }
-
-            $output = rtrim($output, "\n");
-        }
-
-        // The logger will handle timestamps itself.
-        if ($this->_logger !== null) {
-            $this->log($controller->getThrowable(), $output);
-        }
-
-        if (!$this->_silent && $this->_outputTime && $this->_timeFormat !== '') {
-            $time = (new \DateTime())->format($this->_timeFormat) . '  ';
-            $timeStrlen = strlen($time);
-
-            $output = preg_replace('/^/m', str_repeat(' ', $timeStrlen), $output);
-            $output = preg_replace('/^ {' . $timeStrlen . '}/', $time, $output);
-        }
-
-        $outputCode = $this->getOutputCode();
-        return new HandlerOutput($this->getControlCode(), (\PHP_SAPI === 'cli') ? $outputCode | self::NOW : $outputCode, $output);
+    protected function handleCallback(array $output): array {
+        $output['outputCode'] = (\PHP_SAPI === 'cli') ? $output['outputCode'] | self::NOW : $output['outputCode'];
+        return $output;
     }
-
-
 
     protected function log(\Throwable $throwable, string $message): void {
         if ($throwable instanceof \Error) {
@@ -132,21 +67,72 @@ class PlainTextHandler extends Handler {
         }
     }
 
-    protected function serializeThrowable(ThrowableController $controller): string {
-        $throwable = $controller->getThrowable();
-        $class = $throwable::class;
-        if ($throwable instanceof Error) {
-            $type = $controller->getErrorType();
-            $type = ($throwable instanceof Error) ? $controller->getErrorType() : null;
-            $class = ($type !== null) ? "$type (" . $throwable::class . ")" : $throwable::class;
+    protected function serializeOutputThrowable(array $outputThrowable, bool $previous = false): string {
+        $class = $outputThrowable['class'] ?? null;
+        if ($class !== null && !empty($outputThrowable['errorType'])) {
+            $class = "{$outputThrowable['errorType']} ($class)";
+        }
+        
+        $output = sprintf(
+            '%s: %s in file %s on line %d' . \PHP_EOL,
+            $class,
+            $outputThrowable['message'],
+            $outputThrowable['file'],
+            $outputThrowable['line']
+        );
+
+        if (!empty($outputThrowable['previous'])) {
+            if ($previous) {
+                $output .= '  ';
+            }
+            $output .= '↳ ' . $this->serializeOutputThrowable($outputThrowable['previous'], true);
         }
 
-        return sprintf(
-            '%s: %s in file %s on line %d',
-            $class,
-            $throwable->getMessage(),
-            $throwable->getFile(),
-            $throwable->getLine()
-        );
+        if (!$previous) {
+            if (isset($outputThrowable['frames']) && count($outputThrowable['frames']) > 0) {
+                $output .= \PHP_EOL . 'Stack trace:' . \PHP_EOL;
+                $maxDigits = strlen((string)count($outputThrowable['frames']));
+                $indent = str_repeat(' ', $maxDigits);
+                foreach ($outputThrowable['frames'] as $key => $frame) {
+                    $method = null;
+                    if (!empty($frame['class'])) {
+                        if (!empty($frame['errorType'])) {
+                            $method = "{$frame['errorType']} ({$frame['class']})";
+                        } else {
+                            $method = $frame['class'];
+                            if (!empty($frame['function'])) {
+                                $method .= "::{$frame['function']}";
+                            }
+                        }
+                    } elseif (!empty($frame['function'])) {
+                        $method = $frame['function'];
+                    }
+                    
+                    $output .= sprintf("%{$maxDigits}d. %s  %s:%d" . \PHP_EOL,
+                        $key + 1,
+                        $method,
+                        $frame['file'],
+                        $frame['line']
+                    );
+
+                    if (!empty($frame['args']) && $this->_backtraceArgFrameLimit > $key) {
+                        $output .= preg_replace('/^/m', "$indent| ", print_r($frame['args'], true)) . \PHP_EOL;
+                    }
+                }
+
+                $output = rtrim($output) . \PHP_EOL;
+            }
+
+            if (!empty($this->_logger)) {
+                $this->log($outputThrowable['controller']->getThrowable(), $output);
+            }
+
+            if (!empty($outputThrowable['time'])) {
+                $timestamp = $outputThrowable['time']->format($this->_timeFormat) . '  ';
+                $output = ltrim(preg_replace('/^/m', str_repeat(' ', strlen($timestamp)), "$timestamp$output"));
+            }
+        }
+
+        return $output;
     }
 }
