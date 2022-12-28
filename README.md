@@ -179,30 +179,48 @@ abstract class Handler {
 
 #### Constants
 
-_CONTENT\_TYPE_: The mime type of the content that is output by the handler  
-_CONTINUE_: The stack loop continues onto the next handler after handling; this is the default behavior  
-_BREAK_: The stack loop breaks after the handler finishes, causing any further down in the stack to not run  
-_EXIT_: The stack loop exits after running all handlers  
-_OUTPUT_: The handler will output  
-_SILENT_: The handler will be silent  
+_CONTENT\_TYPE_: The mime type of the content that is output by the handler
+
+_CONTINUE_: The stack loop continues onto the next handler after handling; this is the default behavior
+
+_BREAK_: The stack loop breaks after the handler finishes, causing any further down in the stack to not run
+
+_EXIT_: The stack loop exits after running all handlers
+
+_OUTPUT_: The handler will output
+
+_SILENT_: The handler will be silent
+
 _NOW_: Outputs immediately after handling
 
 #### Properties (Protected)
 
 Properties which begin with an underscore all are options. They can be set either through the constructor or via `setHandler` by name, removing the underscore at the beginning. All handlers inherit these options.
 
-_outputBuffer_: This is where the output arrays representing the handled throwables are stored until they are dispatched.  
-_\_backtraceArgFrameLimit_: The number of frames by which there can be arguments output with them. Defaults to _5_.  
-_\_charset_: The character set of the output; only used if headers weren't sent before an error occurred. Defaults to _"UTF\_8"_.  
-_\_forceBreak_: When set this will force the stack loop to break after the handler has run. Defaults to _false_.  
-_\_forceExit_: When set this will force an exit after all handlers have been run. Defaults to _false_.  
-_\_forceOutputNow_: When set this will force output of the handler immediately. Defaults to _false_.  
-_\_httpCode_: The HTTP code to be sent; possible values are 200, 400-599. Defaults to _500_.  
-_\_outputBacktrace_: When true will output a stack trace. Defaults to _false_.  
-_\_outputPrevious_: When true will output previous throwables. Defaults to _true_.  
-_\_outputTime_: When true will output times to the output. Defaults to _true_.  
-_\_outputToStderr_: When the SAPI is cli output errors to stderr. Defaults to _true_.  
-_\_silent_: When true the handler won't output anything. Defaults to _false_.  
+_outputBuffer_: This is where the output arrays representing the handled throwables are stored until they are dispatched.
+
+_\_backtraceArgFrameLimit_: The number of frames by which there can be arguments output with them. Defaults to _5_.
+
+_\_charset_: The character set of the output; only used if headers weren't sent before an error occurred. Defaults to _"UTF\_8"_.
+
+_\_forceBreak_: When set this will force the stack loop to break after the handler has run. Defaults to _false_.
+
+_\_forceExit_: When set this will force an exit after all handlers have been run. Defaults to _false_.
+
+_\_forceOutputNow_: When set this will force output of the handler immediately. Defaults to _false_.
+
+_\_httpCode_: The HTTP code to be sent; possible values are 200, 400-599. Defaults to _500_.
+
+_\_outputBacktrace_: When true will output a stack trace. Defaults to _false_.
+
+_\_outputPrevious_: When true will output previous throwables. Defaults to _true_.
+
+_\_outputTime_: When true will output times to the output. Defaults to _true_.
+
+_\_outputToStderr_: When the SAPI is cli output errors to stderr. Defaults to _true_.
+
+_\_silent_: When true the handler won't output anything. Defaults to _false_.
+
 _\_timeFormat_: The PHP-standard date format which to use for times in output. Defaults to _"Y-m-d\\TH:i:s.vO"_.
 
 #### MensBeam\Foundation\Catcher\Handler::dispatch
@@ -240,3 +258,4 @@ A callback method meant to be extended by inherited classes where the output arr
 #### MensBeam\Foundation\Catcher\Handler::print (protected)
 
 Prints the provided string to stderr or stdout depending on how the handler is configured and which SAPI is being used.
+
