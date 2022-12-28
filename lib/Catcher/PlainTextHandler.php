@@ -21,12 +21,23 @@ class PlainTextHandler extends Handler {
 
 
     protected function dispatchCallback(): void {
-        foreach ($this->outputBuffer as $o) {
-            if ($o['outputCode'] & self::SILENT) {
-                continue;
-            }
+        if ($this->_logger) {
+            foreach ($this->outputBuffer as $o) {
+                $output = $this->serializeOutputThrowable($o);
+                if ($o['outputCode'] & self::SILENT) {
+                    continue;
+                }
 
-            $this->print($this->serializeOutputThrowable($o));
+                $this->print($output);
+            }
+        } else {
+            foreach ($this->outputBuffer as $o) {
+                if ($o['outputCode'] & self::SILENT) {
+                    continue;
+                }
+    
+                $this->print($this->serializeOutputThrowable($o));
+            }
         }
     }
 

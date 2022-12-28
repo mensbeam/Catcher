@@ -15,16 +15,13 @@ abstract class Handler {
     // Control constants
     public const CONTINUE = 1;
     public const BREAK = 2;
-    public const EXIT = 4; // What if this were a bitmask option like NOW?
-    public const STOP = 8;
+    public const EXIT = 4;
 
     // Output constants
-    public const OUTPUT = 16;
-    public const SILENT = 32;
-    public const NOW = 64;
+    public const OUTPUT = 8;
+    public const SILENT = 16;
+    public const NOW = 32;
 
-
-    protected ThrowableController $controller;
 
     /** 
      * Array of HandlerOutputs the handler creates
