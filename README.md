@@ -343,7 +343,7 @@ _timeFormat_: Same as in `Handler`, but the default changes to _"[H:i:s]"_.
 
 ## Creating Handlers
 
-The default handlers, especially `PlainTextHandler`, is set up to handle most tasks, but obviously more is possible with a bit of work. Thankfully, creating handlers is as simple as extending the Handler class. Here is an example of a theoretical `YamlHandler`:
+The default handlers, especially `PlainTextHandler`, are set up to handle most tasks, but obviously more is possible with a bit of work. Thankfully, creating handlers is as simple as extending the `Handler` class. Here is an example of a theoretical `YamlHandler` (which is very similar to `JSONHandler`):
 
 ```php
 namespace Your\Namespace\Goes\Here;
@@ -371,13 +371,13 @@ class YamlHandler extends Handler {
             $this->outputBuffer[$key] = $this->cleanOutputThrowable($this->outputBuffer[$key]);
         }
 
-        $flags = 0;
-        $flags |= ($this->_outputObjectAsMap) ? Yaml::DUMP_OBJECT_AS_MAP : 0;
-        $flags |= ($this->_outputMultiLineLiteralBlock) ? Yaml::DUMP_MULTI_LINE_LITERAL_BLOCK : 0;
-        $flags |= ($this->_outputEmptyArrayAsSequence) ? Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE : 0;
-        $flags |= ($this->_outputNullAsTilde) ? Yaml::DUMP_NULL_AS_TILDE : 0;
-
         if (count($this->outputBuffer) > 0) {
+            $flags = 0;
+            $flags |= ($this->_outputObjectAsMap) ? Yaml::DUMP_OBJECT_AS_MAP : 0;
+            $flags |= ($this->_outputMultiLineLiteralBlock) ? Yaml::DUMP_MULTI_LINE_LITERAL_BLOCK : 0;
+            $flags |= ($this->_outputEmptyArrayAsSequence) ? Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE : 0;
+            $flags |= ($this->_outputNullAsTilde) ? Yaml::DUMP_NULL_AS_TILDE : 0;
+
             $this->print(Yaml::dump([
                 'errors' => $this->outputBuffer
             ], $flags));
@@ -390,7 +390,6 @@ This theoretical class uses the [`symfony/yaml`][c] package in Composer and expo
 
 ```php
 use Mensbeam\Foundation\Catcher,
-    Symfony\Component\Yaml\Yaml,
     Your\Namespace\Goes\Here\YamlHandler;
 
 $catcher = new Catcher(new YamlHandler([
