@@ -166,7 +166,7 @@ class Catcher {
                 // that if the error wouldn't normally stop execution the newly-created Error 
                 // throwable is thrown in a fork instead, allowing execution to resume in the 
                 // parent process.
-                if (in_array($code, [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_COMPILE_ERROR, \E_USER_ERROR ])) {
+                if ($this->isErrorFatal($code)) {
                     throw $error;
                 } elseif ($this->forking && \PHP_SAPI === 'cli' && function_exists('pcntl_fork')) {
                     $pid = pcntl_fork();
@@ -214,10 +214,13 @@ class Catcher {
             $this->isShuttingDown ||
             $controlCode & Handler::EXIT ||
             $throwable instanceof \Exception || 
-            ($throwable instanceof Error && in_array($throwable->getCode(), [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_COMPILE_ERROR, \E_USER_ERROR ])) ||
+            ($throwable instanceof Error && $this->isErrorFatal($throwable->getCode())) ||
             (!$throwable instanceof Error && $throwable instanceof \Error)
         ) {
             foreach ($this->handlers as $h) {
+                if ($this->isShuttingDown) {
+                    $h->setOption('outputBacktrace', false);
+                }
                 $h->dispatch();
             }
 
@@ -226,7 +229,7 @@ class Catcher {
             // Don't want to exit here when shutting down so any shutdown functions further 
             // down the stack still run.
             if (!$this->preventExit && !$this->isShuttingDown) {
-                $this->exit($throwable->getCode());
+                $this->exit(max($throwable->getCode(), 1));
             }
         }
 
@@ -246,21 +249,27 @@ class Catcher {
         $this->throwErrors = false;
         $this->isShuttingDown = true;
         if ($error = $this->getLastError()) {
-            if (in_array($error['type'], [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_CORE_WARNING, \E_COMPILE_ERROR, \E_COMPILE_WARNING ])) {
+            if ($this->isErrorFatal($error['type'])) {
                 $this->handleError($error['type'], $error['message'], $error['file'], $error['line']);
             }
         } else {
             foreach ($this->handlers as $h) {
+                $h->setOption('outputBacktrace', false);
                 $h->dispatch();
             }
         }
     }
 
 
-    /** Exists so the method may be replaced when mocking in tests */
+    /** Exists so exits can be tracked in mocks in testing */
     protected function exit(int $status): void {
         // This won't be shown as executed in code coverage
         exit($status); // @codeCoverageIgnore
+    }
+
+    /** Checks if the error code is fatal */
+    protected function isErrorFatal(int $code): bool {
+        return in_array($code, [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_COMPILE_ERROR, \E_USER_ERROR, \E_RECOVERABLE_ERROR ]);
     }
 
     /** Exists so the method may be replaced when mocking in tests */

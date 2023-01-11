@@ -58,6 +58,7 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      * @covers \MensBeam\Foundation\Catcher::__construct
      * @covers \MensBeam\Foundation\Catcher::handleError
      * @covers \MensBeam\Foundation\Catcher::handleThrowable
+     * @covers \MensBeam\Foundation\Catcher::isErrorFatal
      * @covers \MensBeam\Foundation\Catcher::pushHandler
      * @covers \MensBeam\Foundation\Catcher::register
      * @covers \MensBeam\Foundation\Catcher::unregister
@@ -311,6 +312,7 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      * @covers \MensBeam\Foundation\Catcher::__construct
      * @covers \MensBeam\Foundation\Catcher::getLastThrowable
      * @covers \MensBeam\Foundation\Catcher::handleThrowable
+     * @covers \MensBeam\Foundation\Catcher::isErrorFatal
      * @covers \MensBeam\Foundation\Catcher::pushHandler
      * @covers \MensBeam\Foundation\Catcher::register
      * @covers \MensBeam\Foundation\Catcher::unregister
@@ -402,6 +404,7 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      * @covers \MensBeam\Foundation\Catcher::__construct
      * @covers \MensBeam\Foundation\Catcher::getLastThrowable
      * @covers \MensBeam\Foundation\Catcher::handleError
+     * @covers \MensBeam\Foundation\Catcher::isErrorFatal
      * @covers \MensBeam\Foundation\Catcher::pushHandler
      * @covers \MensBeam\Foundation\Catcher::register
      * @covers \MensBeam\Foundation\Catcher::unregister
@@ -445,6 +448,7 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
      * @covers \MensBeam\Foundation\Catcher::__construct
      * @covers \MensBeam\Foundation\Catcher::getLastError
      * @covers \MensBeam\Foundation\Catcher::handleError
+     * @covers \MensBeam\Foundation\Catcher::isErrorFatal
      * @covers \MensBeam\Foundation\Catcher::handleThrowable
      * @covers \MensBeam\Foundation\Catcher::pushHandler
      * @covers \MensBeam\Foundation\Catcher::register
