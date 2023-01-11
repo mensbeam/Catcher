@@ -62,7 +62,7 @@ Catcher comes built-in with the following handlers:
 
 ### A Note About Warnings & Notices ###
 
-As described in the summary paragraph at the beginning of this document, Catcher by default converts all warnings, notices, etc. to `Throwable`s and then proceeds to throw them. Normally, when throwing that halts execution no matter what, but with Catcher that is not the case.
+As described in the summary paragraph at the beginning of this document, Catcher by default converts all warnings, notices, etc. to `Throwable`s and then proceeds to throw them. Normally, when throwing that halts execution no matter what, but with Catcher that is not always the case.
 
 ```php
 $catcher = new Catcher();
@@ -79,7 +79,7 @@ Output:
 Ook!
 ```
 
-This is accomplished internally because of [`pcntl_fork`][d]. The throw is done in a separate fork which causes that fork to exit after the `Throwable` is handled while the main process is allowed to continue. `pcntl_fork` is a POSIX function and therefore is only available for use in CLI UNIX environments; this means that it will work neither in Windows nor in Web environments. We also understand this might be undesirable behavior to some, so turning this off is as simple as setting `Catcher::$forking` to false.
+This is accomplished internally because of [`pcntl_fork`][d]. The throw is done in a separate fork which causes that fork to exit after the `Throwable` is handled while the main process is allowed to continue. `pcntl_fork` is a POSIX function and therefore is only available for use in CLI UNIX environments; this means that it will work neither in Windows nor in Web environments. We also understand this might be undesirable behavior to many, so turning this off is as simple as setting `Catcher::$forking` to false.
 
 ## Documentation
   
@@ -113,7 +113,7 @@ class Catcher {
 
 #### Properties
 
-_forking_: When set to true Catcher will throw converted notices, warnings, etc. in a fork, allowing for execution to continue afterwards
+_forking_: When set to true Catcher will throw converted notices, warnings, etc. in a fork, allowing for execution to continue afterwards  
 _preventExit_: When set to true Catcher won't exit at all even after fatal errors or exceptions  
 _throwErrors_: When set to true Catcher will convert errors to throwables
 
