@@ -166,15 +166,12 @@ class Catcher {
                 // that if the error wouldn't normally stop execution the newly-created Error 
                 // throwable is thrown in a fork instead, allowing execution to resume in the 
                 // parent process.
-                if (
-                    $this->forking &&
-                    \PHP_SAPI === 'cli' && 
-                    function_exists('pcntl_fork') && 
-                    !in_array($code, [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_COMPILE_ERROR, \E_USER_ERROR ])
-                ) {
+                if (in_array($code, [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_COMPILE_ERROR, \E_USER_ERROR ])) {
+                    throw $error;
+                } elseif ($this->forking && \PHP_SAPI === 'cli' && function_exists('pcntl_fork')) {
                     $pid = pcntl_fork();
                     if ($pid === -1) {
-                        // This can't be covered unless I can somehow fake a misconfigured system
+                        // This can't be covered unless it is possible to fake a misconfigured system
                         throw new \Exception(message: 'Could not create fork to throw Error', previous: $error); // @codeCoverageIgnore
                     } elseif (!$pid) {
                         // This can't be covered because it happens in the fork
@@ -183,8 +180,6 @@ class Catcher {
                     
                     pcntl_wait($status);
                     return true;
-                } else {
-                    throw $error;
                 }
             }
 
