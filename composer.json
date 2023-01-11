@@ -19,7 +19,8 @@
         "psr/log": "^3.0"
     },
     "suggest": {
-        "ext-dom": "For HTMLHandler"
+        "ext-dom": "For HTMLHandler",
+        "ext-pcntl": "For allowing catching of notices, warnings, etc."
     },
     "require-dev": {
         "ext-dom": "*",

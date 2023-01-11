@@ -16,6 +16,8 @@ use MensBeam\Foundation\Catcher\{
 
 
 class Catcher {
+    /** Fork when throwing non-exiting errors, if available */
+    public bool $forking = true;
     /** When set to true Catcher won't exit when instructed */
     public bool $preventExit = false;
     /** When set to true Catcher will throw errors as throwables */
@@ -158,11 +160,35 @@ class Catcher {
         if ($code !== 0 && error_reporting()) {
             $error = new Error($message, $code, $file, $line);
             if ($this->throwErrors) {
-                throw $error;
-            } else {
-                $this->handleThrowable($error);
+                // The point of this library is to allow treating of errors as if they were 
+                // exceptions but instead have things like warnings, notices, etc. not stop 
+                // execution. You normally can't have it both ways. So, what's going on here is 
+                // that if the error wouldn't normally stop execution the newly-created Error 
+                // throwable is thrown in a fork instead, allowing execution to resume in the 
+                // parent process.
+                if (
+                    $this->forking &&
+                    \PHP_SAPI === 'cli' && 
+                    function_exists('pcntl_fork') && 
+                    !in_array($code, [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_COMPILE_ERROR, \E_USER_ERROR ])
+                ) {
+                    $pid = pcntl_fork();
+                    if ($pid === -1) {
+                        // This can't be covered unless I can somehow fake a misconfigured system
+                        throw new \Exception(message: 'Could not create fork to throw Error', previous: $error); // @codeCoverageIgnore
+                    } elseif (!$pid) {
+                        // This can't be covered because it happens in the fork
+                        throw $error; // @codeCoverageIgnore
+                    }
+                    
+                    pcntl_wait($status);
+                    return true;
+                } else {
+                    throw $error;
+                }
             }
 
+            $this->handleThrowable($error);
             return true;
         }
         

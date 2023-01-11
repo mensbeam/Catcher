@@ -53,6 +53,23 @@ class TestPlainTextHandler extends \PHPUnit\Framework\TestCase {
         ob_end_clean();
 
         $l->critical->called();
+
+        $c = new ThrowableController(new \Exception(message: 'Ook!', previous: new \Error(message: 'Eek!', previous: new Error(message: 'Ack!', code: \E_USER_ERROR))));
+        $l = Phony::mock(LoggerInterface::class);
+        $h = new PlainTextHandler([ 
+            'logger' => $l->get(), 
+            'silent' => true
+        ]);
+        $o = $h->handle($c);
+        $this->assertSame(Handler::CONTINUE, $o['controlCode']);
+        $this->assertSame(Handler::SILENT | Handler::NOW, $o['outputCode']);
+        $this->assertTrue(isset($o['previous']));
+
+        ob_start();
+        $h->dispatch();
+        ob_end_clean();
+
+        $l->critical->called();
     }
 
 

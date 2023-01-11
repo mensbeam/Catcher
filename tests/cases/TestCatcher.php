@@ -379,6 +379,13 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
 
         $c->throwErrors = true;
         try {
+            trigger_error('Ook!', \E_USER_WARNING);
+        } catch (\Throwable $t) {
+            $this->assertInstanceOf(Error::class, $t);
+            $this->assertSame(\E_USER_WARNING, $t->getCode());
+        }
+
+        try {
             trigger_error('Ook!', \E_USER_ERROR);
         } catch (\Throwable $t) {
             $this->assertInstanceOf(Error::class, $t);

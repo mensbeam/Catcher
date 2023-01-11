@@ -1,6 +1,7 @@
 # Catcher-specific
 /test*.html
 /test*.php
+/test/
 /test/*
 
 # General
