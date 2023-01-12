@@ -250,11 +250,13 @@ class Catcher {
         $this->isShuttingDown = true;
         if ($error = $this->getLastError()) {
             if ($this->isErrorFatal($error['type'])) {
+                foreach ($this->handlers as $h) {
+                    $h->setOption('silent', true);
+                }
                 $this->handleError($error['type'], $error['message'], $error['file'], $error['line']);
             }
         } else {
             foreach ($this->handlers as $h) {
-                $h->setOption('outputBacktrace', false);
                 $h->dispatch();
             }
         }
