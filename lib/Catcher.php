@@ -120,7 +120,6 @@ class Catcher {
 
         restore_error_handler();
         restore_exception_handler();
-        error_reporting($this->errorReporting);
         error_reporting(error_reporting() | \E_ERROR);
         $this->registered = false;
         return true;
