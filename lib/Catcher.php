@@ -92,6 +92,7 @@ class Catcher {
             return false;
         }
 
+        error_reporting(error_reporting() & ~\E_ERROR);
         set_error_handler([ $this, 'handleError' ]);
         set_exception_handler([ $this, 'handleThrowable' ]);
         register_shutdown_function([ $this, 'handleShutdown' ]);
@@ -119,6 +120,8 @@ class Catcher {
 
         restore_error_handler();
         restore_exception_handler();
+        error_reporting($this->errorReporting);
+        error_reporting(error_reporting() | \E_ERROR);
         $this->registered = false;
         return true;
     }
@@ -250,9 +253,6 @@ class Catcher {
         $this->isShuttingDown = true;
         if ($error = $this->getLastError()) {
             if ($this->isErrorFatal($error['type'])) {
-                foreach ($this->handlers as $h) {
-                    $h->setOption('silent', true);
-                }
                 $this->handleError($error['type'], $error['message'], $error['file'], $error['line']);
             }
         } else {

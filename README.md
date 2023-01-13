@@ -60,7 +60,7 @@ Catcher comes built-in with the following handlers:
 * `JSONHandler` – Outputs errors in a JSON format mostly representative of how errors are stored internally by Catcher handlers; it is provided as an example. The decision to make it like this was made because errors often need to be represented according to particular requirements or even a specification, and we cannot possibly support them all. `JSONHandler`, however, can be easily extended to suit individual project needs.
 * `PlainTextHandler` – Outputs errors cleanly in plain text meant mostly for command line use and also provides for logging
 
-### A Note About Warnings & Notices ###
+### Notices ###
 
 As described in the summary paragraph at the beginning of this document, Catcher by default converts all warnings, notices, etc. to `Throwable`s and then proceeds to throw them. Normally, when throwing that halts execution no matter what, but with Catcher that is not always the case.
 
@@ -80,6 +80,8 @@ Ook!
 ```
 
 This is accomplished internally because of [`pcntl_fork`][d]. The throw is done in a separate fork which causes that fork to exit after the `Throwable` is handled while the main process is allowed to continue. `pcntl_fork` is a POSIX function and therefore is only available for use in CLI UNIX environments; this means that it will work neither in Windows nor in Web environments. We also understand this might be undesirable behavior to many, so turning this off is as simple as setting `Catcher::$forking` to false.
+
+PHP by default won't allow fatal errors to be handled by error handlers. It will instead print the error and exit. However, before code execution halts any shutdown functions are run. Catcher will retrieve the last error and manually process it. This causes multiple instances of the same error to be output. Because of this Catcher alters the error reporting level by always removing `E_ERROR` from it when registering the handlers. `E_ERROR` is bitwise or'd back to the error reporting level when unregistering. If this behavior is undesirable then `E_ERROR` can be manually included back into error reporting at any time after Catcher instantiates.
 
 ## Documentation
   
