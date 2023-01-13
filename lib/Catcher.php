@@ -24,6 +24,11 @@ class Catcher {
     public bool $throwErrors = true;
 
     /** 
+     * Stores the error reporting level set by Catcher to compare against when  
+     * unregistering 
+     */
+    protected ?int $errorReporting = null;
+    /** 
      * Array of handlers the exceptions are passed to
      * 
      * @var Handler[] 
@@ -92,7 +97,14 @@ class Catcher {
             return false;
         }
 
-        error_reporting(error_reporting() & ~\E_ERROR);
+        // If the current error reporting level has E_ERROR then remove it and store for 
+        // comparison when unregistering
+        $errorReporting = error_reporting();
+        if ($errorReporting & \E_ERROR) {
+            $this->errorReporting = $errorReporting & ~\E_ERROR;
+            error_reporting($this->errorReporting);
+        }
+
         set_error_handler([ $this, 'handleError' ]);
         set_exception_handler([ $this, 'handleThrowable' ]);
         register_shutdown_function([ $this, 'handleShutdown' ]);
@@ -120,7 +132,15 @@ class Catcher {
 
         restore_error_handler();
         restore_exception_handler();
-        error_reporting(error_reporting() | \E_ERROR);
+
+        // If error reporting has been set when registering and the error reporting level 
+        // is the same as it was when it was set then add E_ERROR back to the error
+        $errorReporting = error_reporting();
+        if ($this->errorReporting !== null && $this->errorReporting === $errorReporting) {
+            error_reporting($errorReporting | \E_ERROR);
+        }
+        $this->errorReporting = null;
+
         $this->registered = false;
         return true;
     }
