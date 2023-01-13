@@ -127,7 +127,8 @@ class PlainTextHandler extends Handler {
                     );
 
                     if (!empty($frame['args']) && $this->_backtraceArgFrameLimit > $key) {
-                        $output .= preg_replace('/^/m', "$indent| ", print_r($frame['args'], true)) . \PHP_EOL;
+                        $varExporter = $this->_varExporter;
+                        $output .= preg_replace('/^/m', "$indent| ", $varExporter($frame['args'])) . \PHP_EOL;
                     }
                 }
 

@@ -146,8 +146,9 @@ class HTMLHandler extends Handler {
                 $t->appendChild($this->_document->createTextNode(":{$frame['line']}"));
 
                 if (isset($frame['args'])) {
+                    $varExporter = $this->_varExporter;
                     $pre = $this->_document->createElement('pre');
-                    $pre->appendChild($this->_document->createTextNode(trim(print_r($frame['args'], true))));
+                    $pre->appendChild($this->_document->createTextNode(trim($varExporter($frame['args']))));
                     $li->appendChild($pre);
                 }
             }

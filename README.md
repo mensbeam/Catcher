@@ -2,6 +2,8 @@
 [b]: https://github.com/Seldaek/monolog
 [c]: https://github.com/symfony/yaml
 [d]: https://www.php.net/manual/en/function.pcntl-fork.php
+[e]: https://www.php.net/manual/en/function.print-r.php
+[f]: https://github.com/symfony/var-exporter
 
 # Catcher
 
@@ -195,6 +197,7 @@ abstract class Handler {
     protected bool $_outputToStderr = true;
     protected bool $_silent = false;
     protected string $_timeFormat = 'Y-m-d\TH:i:s.vO';
+    protected ?\Closure $varExporter = null;
 
     public function __construct(array $options = []);
 
@@ -244,7 +247,9 @@ _outputPrevious_: When true will output previous throwables. Defaults to _true_.
 _outputTime_: When true will output times to the output. Defaults to _true_.  
 _outputToStderr_: When the SAPI is cli output errors to stderr. Defaults to _true_.  
 _silent_: When true the handler won't output anything. Defaults to _false_.  
-_timeFormat_: The PHP-standard date format which to use for times in output. Defaults to _"Y-m-d\\TH:i:s.vO"_.
+_timeFormat_: The PHP-standard date format which to use for times in output. Defaults to _"Y-m-d\\TH:i:s.vO"_.  
+_varExporter_: A user-defined closure to use when printing arguments in backtraces. Defaults to _null_.
+
 
 #### MensBeam\Foundation\Catcher\Handler::dispatch
 
@@ -414,8 +419,11 @@ class YamlHandler extends Handler {
 This theoretical class uses the [`symfony/yaml`][c] package in Composer and exposes a few of its options as options for the Handler. Using this class would be very similar to the examples provided at the beginning of this document:
 
 ```php
+#!/usr/bin/env php
+<?php
 use MensBeam\Foundation\Catcher,
     Your\Namespace\Goes\Here\YamlHandler;
+require_once('vendor/autoload.php');
 
 $catcher = new Catcher(new YamlHandler([
     'outputNullAsTilde' => true
@@ -423,3 +431,36 @@ $catcher = new Catcher(new YamlHandler([
 ```
 
 More complex handlers are possible by extending the various methods documented above. Examples can be seen by looking at the code for both `HTMLHandler` and `PlainTextHandler`.
+
+## Setting a Custom Variable Exporter
+
+By default internally [`print_r`][e] is used. This is due to tests made internally where it performed the best out of built-in options, including other functions which might otherwise be preferred. Starting in v1.0.2 `Handler`'s `varExporter` option allows for defining how arguments are printed in backtraces in Catcher. Here is an example:
+
+```php
+#!/usr/bin/env php
+<?php
+use MensBeam\Foundation\Catcher,
+    Symfony\Component\VarExporter\VarExporter;
+use MensBeam\Foundation\Catcher\PlainTextHandler;
+require_once('vendor/autoload.php');
+
+$c = new Catcher(new PlainTextHandler([
+    'outputBacktrace' => true,
+    'varExporter' => fn(mixed $value): string|bool => VarExporter::export($value)
+]));
+
+throw new \Exception('Ook!');
+```
+
+Output:
+```
+[04:48:23]  Exception: Ook! in file /home/mensbeam/super-awesome-project/ook.php on line 13
+            
+            Stack trace:
+            1. Exception  /home/mensbeam/super-awesome-project/ook.php:13
+             | [
+             |     'Ook!',
+             | ]
+```
+
+This example above uses the symfony/var-exporter package for a more modern human-readable variable export. However, using any variable printer is possible.

@@ -60,6 +60,12 @@ abstract class Handler {
     protected bool $_silent = false;
     /** The PHP-standard date format which to use for timestamps in output */
     protected string $_timeFormat = 'Y-m-d\TH:i:s.vO';
+    /** 
+     * A user-defined closure to use when printing arguments in backtraces
+     * 
+     * @var ?(mixed): string|bool
+     */
+    protected ?\Closure $_varExporter = null;
 
 
 
@@ -72,6 +78,10 @@ abstract class Handler {
             }
 
             $this->$key = $value;
+        }
+
+        if ($this->_varExporter === null) {
+            $this->_varExporter = fn(mixed $value): string|bool => print_r($value, true);
         }
     }
 
