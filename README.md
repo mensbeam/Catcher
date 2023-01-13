@@ -454,7 +454,7 @@ throw new \Exception('Ook!');
 
 Output:
 ```
-[04:48:23]  Exception: Ook! in file /home/mensbeam/super-awesome-project/ook.php on line 13
+[21:12:00]  Exception: Ook! in file /home/mensbeam/super-awesome-project/ook.php on line 13
             
             Stack trace:
             1. Exception  /home/mensbeam/super-awesome-project/ook.php:13
@@ -463,4 +463,4 @@ Output:
              | ]
 ```
 
-This example above uses the symfony/var-exporter package for a more modern human-readable variable export. However, using any variable printer is possible.
+This example above uses the [symfony/var-exporter][f] package for a more modern human-readable variable export. However, using any variable printer is possible.
