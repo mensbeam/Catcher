@@ -8,7 +8,7 @@ $testDir = "$cwd/tests";
 function help($error = true): void {
     $help = <<<USAGE
     Usage:
-        run test [typical|quick|coverage|full] [additional_phpunit_options]
+        run test [additional_phpunit_options]
         run --help
     
     USAGE;
@@ -38,26 +38,8 @@ switch ($argv[1]) {
             '--coverage-html='.escapeshellarg("$testDir/coverage")
         ];
 
-        $argv[2] = $argv[2] ?? '';
-        switch ($argv[2]) {
-            case '':
-            case 'typical':
-                $opts[] = '--exclude-group=optional';
-            break;
-            case 'quick':
-                $opts[] = '--exclude-group=optional,slow';
-            break;
-            case 'coverage':
-                $opts[] = '--exclude-group=optional,coverageOptional';
-            break;
-            case 'full':
-            break;
-            default:
-                help();
-        }
-
-        if (isset($argv[3])) {
-            $opts = [ ...$opts, array_slice($argv, 3) ];
+        if (isset($argv[2])) {
+            $opts = [ ...$opts, array_slice($argv, 2) ];
         }
 
         $opts = implode(' ', $opts);

@@ -179,7 +179,7 @@ class Catcher {
      * @internal
      */
     public function handleError(int $code, string $message, ?string $file = null, ?int $line = null): bool {
-        if ($code !== 0 && error_reporting()) {
+        if ($code && $code & error_reporting()) {
             $error = new Error($message, $code, $file, $line);
             if ($this->throwErrors) {
                 // The point of this library is to allow treating of errors as if they were 
@@ -272,6 +272,10 @@ class Catcher {
         $this->isShuttingDown = true;
         if ($error = $this->getLastError()) {
             if ($this->isErrorFatal($error['type'])) {
+                $errorReporting = error_reporting();
+                if ($this->errorReporting !== null && $this->errorReporting === $errorReporting && !($this->errorReporting & \E_ERROR)) {
+                    error_reporting($errorReporting | \E_ERROR);
+                }
                 $this->handleError($error['type'], $error['message'], $error['file'], $error['line']);
             }
         } else {

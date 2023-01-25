@@ -14,10 +14,7 @@ use MensBeam\Foundation\Catcher\{
     ThrowableController
 };
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
+
 class TestThrowableController extends \PHPUnit\Framework\TestCase {
     /**
      * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType

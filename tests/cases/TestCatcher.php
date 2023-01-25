@@ -482,6 +482,7 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         $p = new \ReflectionProperty($c, 'isShuttingDown');
         $p->setAccessible(true);
         $this->assertFalse($p->getValue($c));
+        $c->unregister();
 
         $h = Phony::partialMock(Catcher::class, [ new PlainTextHandler([ 'silent' => true ]) ]);
         $h->getLastError->returns([
@@ -494,6 +495,5 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         $c->handleShutdown();
         $h->handleError->called();
         $h->handleThrowable->called();
-        $c->unregister();
     }
 }
