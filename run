@@ -68,8 +68,9 @@ $cmd = [
     '-d zend.assertions=1'
 ];
 if (!extension_loaded('xdebug')) {
+    $extDir = rtrim(ini_get("extension_dir"), "/");
     if (file_exists("$extDir/xdebug.so")) {
-        $cmd[] = '-d extension=xdebug.so';
+        $cmd[] = '-d zend_extension=xdebug.so';
     } else {
         error('Xdebug is not installed on your system; aborting');
     }
