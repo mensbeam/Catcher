@@ -5,7 +5,7 @@
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "MensBeam\\Foundation\\": "lib/"
+            "MensBeam\\": "lib/"
         }
     },
     "authors": [
@@ -24,9 +24,9 @@
     },
     "require-dev": {
         "ext-dom": "*",
-        "mensbeam/html-dom": "^1.0",
-        "phpunit/phpunit": "^9.5",
-        "nikic/php-parser": "^4.15",
-        "eloquent/phony-phpunit": "^7.1"
+        "mensbeam/html-dom": ">=1.0",
+        "phpunit/phpunit": ">=9.5",
+        "nikic/php-parser": ">=4.15",
+        "eloquent/phony-phpunit": ">=7.1"
     }
 }

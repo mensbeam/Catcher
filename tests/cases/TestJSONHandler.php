@@ -6,9 +6,9 @@
  */
 
 declare(strict_types=1);
-namespace MensBeam\Foundation\Catcher\Test;
-use MensBeam\Foundation\Catcher;
-use MensBeam\Foundation\Catcher\{
+namespace MensBeam\Catcher\Test;
+use MensBeam\Catcher;
+use MensBeam\Catcher\{
     Error,
     Handler,
     JSONHandler,
@@ -18,18 +18,18 @@ use MensBeam\Foundation\Catcher\{
 
 class TestJSONHandler extends \PHPUnit\Framework\TestCase {
     /**
-     * @covers \MensBeam\Foundation\Catcher\JSONHandler::dispatchCallback
+     * @covers \MensBeam\Catcher\JSONHandler::dispatchCallback
      * 
-     * @covers \MensBeam\Foundation\Catcher\Error::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
-     * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\Handler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
+     * @covers \MensBeam\Catcher\Error::__construct
+     * @covers \MensBeam\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\Handler::buildOutputArray
+     * @covers \MensBeam\Catcher\Handler::dispatch
+     * @covers \MensBeam\Catcher\Handler::handle
+     * @covers \MensBeam\Catcher\Handler::handleCallback
+     * @covers \MensBeam\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Catcher\ThrowableController::getErrorType
+     * @covers \MensBeam\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Catcher\ThrowableController::getThrowable
      */
     public function testMethod_dispatchCallback(): void {
         // Not much left to cover; just need to test silent output

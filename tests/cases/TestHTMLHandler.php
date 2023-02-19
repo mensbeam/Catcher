@@ -6,9 +6,9 @@
  */
 
 declare(strict_types=1);
-namespace MensBeam\Foundation\Catcher\Test;
-use MensBeam\Foundation\Catcher;
-use MensBeam\Foundation\Catcher\{
+namespace MensBeam\Catcher\Test;
+use MensBeam\Catcher;
+use MensBeam\Catcher\{
     Error,
     Handler,
     HTMLHandler,
@@ -18,9 +18,9 @@ use MensBeam\Foundation\Catcher\{
 
 class TestHTMLHandler extends \PHPUnit\Framework\TestCase {
     /**
-     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::__construct
+     * @covers \MensBeam\Catcher\HTMLHandler::__construct
      * 
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\Handler::__construct
      */
     public function testMethod___construct__exception(): void {
         $this->expectException(\InvalidArgumentException::class);
@@ -28,21 +28,21 @@ class TestHTMLHandler extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::buildOutputThrowable
+     * @covers \MensBeam\Catcher\HTMLHandler::buildOutputThrowable
      * 
-     * @covers \MensBeam\Foundation\Catcher\Error::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
-     * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::__construct
-     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::dispatchCallback
-     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::serializeDocument
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getFrames
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
+     * @covers \MensBeam\Catcher\Error::__construct
+     * @covers \MensBeam\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\Handler::buildOutputArray
+     * @covers \MensBeam\Catcher\Handler::handle
+     * @covers \MensBeam\Catcher\HTMLHandler::__construct
+     * @covers \MensBeam\Catcher\HTMLHandler::dispatchCallback
+     * @covers \MensBeam\Catcher\HTMLHandler::handleCallback
+     * @covers \MensBeam\Catcher\HTMLHandler::serializeDocument
+     * @covers \MensBeam\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Catcher\ThrowableController::getErrorType
+     * @covers \MensBeam\Catcher\ThrowableController::getFrames
+     * @covers \MensBeam\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Catcher\ThrowableController::getThrowable
      */
     public function testMethod_buildOutputThrowable(): void {
         $c = new ThrowableController(new \Exception(message: 'Ook!', previous: new Error(message: 'Eek!', code: \E_USER_ERROR, previous: new Error(message: 'Ack!'))));
@@ -60,17 +60,17 @@ class TestHTMLHandler extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::dispatchCallback
+     * @covers \MensBeam\Catcher\HTMLHandler::dispatchCallback
      * 
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
-     * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\Handler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::__construct
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
+     * @covers \MensBeam\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\Handler::buildOutputArray
+     * @covers \MensBeam\Catcher\Handler::dispatch
+     * @covers \MensBeam\Catcher\Handler::handle
+     * @covers \MensBeam\Catcher\Handler::handleCallback
+     * @covers \MensBeam\Catcher\HTMLHandler::__construct
+     * @covers \MensBeam\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Catcher\ThrowableController::getThrowable
      */
     public function testMethod_dispatchCallback(): void {
         $c = new ThrowableController(new \Exception(message: 'Ook!'));

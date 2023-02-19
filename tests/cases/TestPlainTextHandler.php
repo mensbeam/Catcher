@@ -6,9 +6,9 @@
  */
 
 declare(strict_types=1);
-namespace MensBeam\Foundation\Catcher\Test;
-use MensBeam\Foundation\Catcher;
-use MensBeam\Foundation\Catcher\{
+namespace MensBeam\Catcher\Test;
+use MensBeam\Catcher;
+use MensBeam\Catcher\{
     Error,
     Handler,
     PlainTextHandler,
@@ -20,20 +20,20 @@ use Eloquent\Phony\Phpunit\Phony,
 
 class TestPlainTextHandler extends \PHPUnit\Framework\TestCase {
     /**
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
+     * @covers \MensBeam\Catcher\PlainTextHandler::handleCallback
      * 
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
-     * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::log
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeOutputThrowable
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getFrames
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
+     * @covers \MensBeam\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\Handler::buildOutputArray
+     * @covers \MensBeam\Catcher\Handler::handle
+     * @covers \MensBeam\Catcher\PlainTextHandler::dispatchCallback
+     * @covers \MensBeam\Catcher\PlainTextHandler::handleCallback
+     * @covers \MensBeam\Catcher\PlainTextHandler::log
+     * @covers \MensBeam\Catcher\PlainTextHandler::serializeOutputThrowable
+     * @covers \MensBeam\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Catcher\ThrowableController::getErrorType
+     * @covers \MensBeam\Catcher\ThrowableController::getFrames
+     * @covers \MensBeam\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Catcher\ThrowableController::getThrowable
      */
     public function testMethod_handleCallback(): void {
         $c = new ThrowableController(new \Exception(message: 'Ook!', previous: new \Error(message: 'Eek!', previous: new Error(message: 'Ack!', code: \E_USER_ERROR))));
@@ -74,19 +74,19 @@ class TestPlainTextHandler extends \PHPUnit\Framework\TestCase {
 
 
     /**
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::log
+     * @covers \MensBeam\Catcher\PlainTextHandler::log
      * 
-     * @covers \MensBeam\Foundation\Catcher\Error::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
-     * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
+     * @covers \MensBeam\Catcher\Error::__construct
+     * @covers \MensBeam\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\Handler::buildOutputArray
+     * @covers \MensBeam\Catcher\Handler::handle
+     * @covers \MensBeam\Catcher\PlainTextHandler::dispatchCallback
+     * @covers \MensBeam\Catcher\PlainTextHandler::handleCallback
+     * @covers \MensBeam\Catcher\PlainTextHandler::dispatchCallback
+     * @covers \MensBeam\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Catcher\ThrowableController::getErrorType
+     * @covers \MensBeam\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Catcher\ThrowableController::getThrowable
      */
     public function testMethod_log(): void {
         $l = Phony::mock(LoggerInterface::class);

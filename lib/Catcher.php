@@ -6,8 +6,8 @@
  */
 
 declare(strict_types=1);
-namespace MensBeam\Foundation;
-use MensBeam\Foundation\Catcher\{
+namespace MensBeam;
+use MensBeam\Catcher\{
     Error,
     Handler,
     PlainTextHandler,

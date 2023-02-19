@@ -6,9 +6,9 @@
  */
 
 declare(strict_types=1);
-namespace MensBeam\Foundation\Catcher\Test;
-use MensBeam\Foundation\Catcher;
-use MensBeam\Foundation\Catcher\{
+namespace MensBeam\Catcher\Test;
+use MensBeam\Catcher;
+use MensBeam\Catcher\{
     Error,
     HTMLHandler,
     JSONHandler,
@@ -19,14 +19,14 @@ use Eloquent\Phony\Phpunit\Phony;
 
 class TestCatcher extends \PHPUnit\Framework\TestCase {
     /**
-     * @covers \MensBeam\Foundation\Catcher::__construct
+     * @covers \MensBeam\Catcher::__construct
      * 
-     * @covers \MensBeam\Foundation\Catcher::getHandlers
-     * @covers \MensBeam\Foundation\Catcher::pushHandler
-     * @covers \MensBeam\Foundation\Catcher::register
-     * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::__construct
+     * @covers \MensBeam\Catcher::getHandlers
+     * @covers \MensBeam\Catcher::pushHandler
+     * @covers \MensBeam\Catcher::register
+     * @covers \MensBeam\Catcher::unregister
+     * @covers \MensBeam\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\HTMLHandler::__construct
      */
     public function testMethod___construct(): void {
         $c = new Catcher();
@@ -43,7 +43,7 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         );
         $c->preventExit = true;
         $c->throwErrors = false;
-        $this->assertSame('MensBeam\Foundation\Catcher', $c::class);
+        $this->assertSame('MensBeam\Catcher', $c::class);
         $this->assertSame(3, count($c->getHandlers()));
         $h = $c->getHandlers();
         $this->assertSame(PlainTextHandler::class, $h[0]::class);
@@ -53,26 +53,26 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher::getLastThrowable
+     * @covers \MensBeam\Catcher::getLastThrowable
      * 
-     * @covers \MensBeam\Foundation\Catcher::__construct
-     * @covers \MensBeam\Foundation\Catcher::handleError
-     * @covers \MensBeam\Foundation\Catcher::handleThrowable
-     * @covers \MensBeam\Foundation\Catcher::isErrorFatal
-     * @covers \MensBeam\Foundation\Catcher::pushHandler
-     * @covers \MensBeam\Foundation\Catcher::register
-     * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Catcher\Error::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
-     * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
+     * @covers \MensBeam\Catcher::__construct
+     * @covers \MensBeam\Catcher::handleError
+     * @covers \MensBeam\Catcher::handleThrowable
+     * @covers \MensBeam\Catcher::isErrorFatal
+     * @covers \MensBeam\Catcher::pushHandler
+     * @covers \MensBeam\Catcher::register
+     * @covers \MensBeam\Catcher::unregister
+     * @covers \MensBeam\Catcher\Error::__construct
+     * @covers \MensBeam\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\Handler::buildOutputArray
+     * @covers \MensBeam\Catcher\Handler::dispatch
+     * @covers \MensBeam\Catcher\Handler::handle
+     * @covers \MensBeam\Catcher\PlainTextHandler::dispatchCallback
+     * @covers \MensBeam\Catcher\PlainTextHandler::handleCallback
+     * @covers \MensBeam\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Catcher\ThrowableController::getErrorType
+     * @covers \MensBeam\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Catcher\ThrowableController::getThrowable
      */
     public function testMethod_getLastThrowable(): void {
         $c = new Catcher(new PlainTextHandler([ 'silent' => true ]));
@@ -84,12 +84,12 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher::pushHandler
+     * @covers \MensBeam\Catcher::pushHandler
      * 
-     * @covers \MensBeam\Foundation\Catcher::__construct
-     * @covers \MensBeam\Foundation\Catcher::register
-     * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher::__construct
+     * @covers \MensBeam\Catcher::register
+     * @covers \MensBeam\Catcher::unregister
+     * @covers \MensBeam\Catcher\Handler::__construct
      */
     public function testMethod_pushHandler(): void {
         $e = null;
@@ -128,14 +128,14 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher::popHandler
+     * @covers \MensBeam\Catcher::popHandler
      * 
-     * @covers \MensBeam\Foundation\Catcher::__construct
-     * @covers \MensBeam\Foundation\Catcher::pushHandler
-     * @covers \MensBeam\Foundation\Catcher::register
-     * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::__construct
+     * @covers \MensBeam\Catcher::__construct
+     * @covers \MensBeam\Catcher::pushHandler
+     * @covers \MensBeam\Catcher::register
+     * @covers \MensBeam\Catcher::unregister
+     * @covers \MensBeam\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\HTMLHandler::__construct
      */
     public function testMethod_popHandler(): void {
         $h = [
@@ -163,13 +163,13 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher::isRegistered
+     * @covers \MensBeam\Catcher::isRegistered
      * 
-     * @covers \MensBeam\Foundation\Catcher::__construct
-     * @covers \MensBeam\Foundation\Catcher::pushHandler
-     * @covers \MensBeam\Foundation\Catcher::register
-     * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher::__construct
+     * @covers \MensBeam\Catcher::pushHandler
+     * @covers \MensBeam\Catcher::register
+     * @covers \MensBeam\Catcher::unregister
+     * @covers \MensBeam\Catcher\Handler::__construct
      */
     public function testMethod_register(): void {
         $c = new Catcher();
@@ -182,14 +182,14 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher::setHandlers
+     * @covers \MensBeam\Catcher::setHandlers
      * 
-     * @covers \MensBeam\Foundation\Catcher::__construct
-     * @covers \MensBeam\Foundation\Catcher::getHandlers
-     * @covers \MensBeam\Foundation\Catcher::pushHandler
-     * @covers \MensBeam\Foundation\Catcher::register
-     * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher::__construct
+     * @covers \MensBeam\Catcher::getHandlers
+     * @covers \MensBeam\Catcher::pushHandler
+     * @covers \MensBeam\Catcher::register
+     * @covers \MensBeam\Catcher::unregister
+     * @covers \MensBeam\Catcher\Handler::__construct
      */
     public function testMethod_setHandlers(): void {
         $c = new Catcher();
@@ -203,14 +203,14 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher::shiftHandler
+     * @covers \MensBeam\Catcher::shiftHandler
      * 
-     * @covers \MensBeam\Foundation\Catcher::__construct
-     * @covers \MensBeam\Foundation\Catcher::pushHandler
-     * @covers \MensBeam\Foundation\Catcher::register
-     * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::__construct
+     * @covers \MensBeam\Catcher::__construct
+     * @covers \MensBeam\Catcher::pushHandler
+     * @covers \MensBeam\Catcher::register
+     * @covers \MensBeam\Catcher::unregister
+     * @covers \MensBeam\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\HTMLHandler::__construct
      */
     public function testMethod_shiftHandler(): void {
         $h = [
@@ -238,12 +238,12 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher::unregister
+     * @covers \MensBeam\Catcher::unregister
      * 
-     * @covers \MensBeam\Foundation\Catcher::__construct
-     * @covers \MensBeam\Foundation\Catcher::pushHandler
-     * @covers \MensBeam\Foundation\Catcher::register
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher::__construct
+     * @covers \MensBeam\Catcher::pushHandler
+     * @covers \MensBeam\Catcher::register
+     * @covers \MensBeam\Catcher\Handler::__construct
      */
     public function testMethod_unregister(): void {
         $c = new Catcher();
@@ -254,15 +254,15 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher::unshiftHandler
+     * @covers \MensBeam\Catcher::unshiftHandler
      * 
-     * @covers \MensBeam\Foundation\Catcher::__construct
-     * @covers \MensBeam\Foundation\Catcher::getHandlers
-     * @covers \MensBeam\Foundation\Catcher::pushHandler
-     * @covers \MensBeam\Foundation\Catcher::register
-     * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\HTMLHandler::__construct
+     * @covers \MensBeam\Catcher::__construct
+     * @covers \MensBeam\Catcher::getHandlers
+     * @covers \MensBeam\Catcher::pushHandler
+     * @covers \MensBeam\Catcher::register
+     * @covers \MensBeam\Catcher::unregister
+     * @covers \MensBeam\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\HTMLHandler::__construct
      */
     public function testMethod_unshiftHandler(): void {
         $c = new Catcher(new PlainTextHandler());
@@ -307,26 +307,26 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher::handleError
+     * @covers \MensBeam\Catcher::handleError
      * 
-     * @covers \MensBeam\Foundation\Catcher::__construct
-     * @covers \MensBeam\Foundation\Catcher::getLastThrowable
-     * @covers \MensBeam\Foundation\Catcher::handleThrowable
-     * @covers \MensBeam\Foundation\Catcher::isErrorFatal
-     * @covers \MensBeam\Foundation\Catcher::pushHandler
-     * @covers \MensBeam\Foundation\Catcher::register
-     * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Catcher\Error::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
-     * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
+     * @covers \MensBeam\Catcher::__construct
+     * @covers \MensBeam\Catcher::getLastThrowable
+     * @covers \MensBeam\Catcher::handleThrowable
+     * @covers \MensBeam\Catcher::isErrorFatal
+     * @covers \MensBeam\Catcher::pushHandler
+     * @covers \MensBeam\Catcher::register
+     * @covers \MensBeam\Catcher::unregister
+     * @covers \MensBeam\Catcher\Error::__construct
+     * @covers \MensBeam\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\Handler::buildOutputArray
+     * @covers \MensBeam\Catcher\Handler::dispatch
+     * @covers \MensBeam\Catcher\Handler::handle
+     * @covers \MensBeam\Catcher\PlainTextHandler::dispatchCallback
+     * @covers \MensBeam\Catcher\PlainTextHandler::handleCallback
+     * @covers \MensBeam\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Catcher\ThrowableController::getErrorType
+     * @covers \MensBeam\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Catcher\ThrowableController::getThrowable
      */
     public function testMethod_handleError(): void {
         $c = new Catcher(new PlainTextHandler([ 'silent' => true ]));
@@ -399,25 +399,25 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher::handleThrowable
+     * @covers \MensBeam\Catcher::handleThrowable
      * 
-     * @covers \MensBeam\Foundation\Catcher::__construct
-     * @covers \MensBeam\Foundation\Catcher::getLastThrowable
-     * @covers \MensBeam\Foundation\Catcher::handleError
-     * @covers \MensBeam\Foundation\Catcher::isErrorFatal
-     * @covers \MensBeam\Foundation\Catcher::pushHandler
-     * @covers \MensBeam\Foundation\Catcher::register
-     * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Catcher\Error::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
-     * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
+     * @covers \MensBeam\Catcher::__construct
+     * @covers \MensBeam\Catcher::getLastThrowable
+     * @covers \MensBeam\Catcher::handleError
+     * @covers \MensBeam\Catcher::isErrorFatal
+     * @covers \MensBeam\Catcher::pushHandler
+     * @covers \MensBeam\Catcher::register
+     * @covers \MensBeam\Catcher::unregister
+     * @covers \MensBeam\Catcher\Error::__construct
+     * @covers \MensBeam\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\Handler::buildOutputArray
+     * @covers \MensBeam\Catcher\Handler::dispatch
+     * @covers \MensBeam\Catcher\Handler::handle
+     * @covers \MensBeam\Catcher\PlainTextHandler::dispatchCallback
+     * @covers \MensBeam\Catcher\PlainTextHandler::handleCallback
+     * @covers \MensBeam\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Catcher\ThrowableController::getThrowable
      */
     public function testMethod_handleThrowable(): void {
         $c = new Catcher(new PlainTextHandler([ 'silent' => true, 'forceBreak' => true ]));
@@ -443,26 +443,26 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher::handleShutdown
+     * @covers \MensBeam\Catcher::handleShutdown
      * 
-     * @covers \MensBeam\Foundation\Catcher::__construct
-     * @covers \MensBeam\Foundation\Catcher::getLastError
-     * @covers \MensBeam\Foundation\Catcher::handleError
-     * @covers \MensBeam\Foundation\Catcher::isErrorFatal
-     * @covers \MensBeam\Foundation\Catcher::handleThrowable
-     * @covers \MensBeam\Foundation\Catcher::pushHandler
-     * @covers \MensBeam\Foundation\Catcher::register
-     * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Catcher\Error::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
-     * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
+     * @covers \MensBeam\Catcher::__construct
+     * @covers \MensBeam\Catcher::getLastError
+     * @covers \MensBeam\Catcher::handleError
+     * @covers \MensBeam\Catcher::isErrorFatal
+     * @covers \MensBeam\Catcher::handleThrowable
+     * @covers \MensBeam\Catcher::pushHandler
+     * @covers \MensBeam\Catcher::register
+     * @covers \MensBeam\Catcher::unregister
+     * @covers \MensBeam\Catcher\Error::__construct
+     * @covers \MensBeam\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\Handler::buildOutputArray
+     * @covers \MensBeam\Catcher\Handler::dispatch
+     * @covers \MensBeam\Catcher\Handler::handle
+     * @covers \MensBeam\Catcher\PlainTextHandler::dispatchCallback
+     * @covers \MensBeam\Catcher\PlainTextHandler::handleCallback
+     * @covers \MensBeam\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Catcher\ThrowableController::getThrowable
      */
     public function testMethod_handleShutdown(): void {
         $c = new Catcher();

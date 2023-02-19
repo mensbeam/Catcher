@@ -6,7 +6,7 @@
  */
 
 declare(strict_types=1);
-namespace MensBeam\Foundation\Catcher;
+namespace MensBeam\Catcher;
 
 
 class ThrowableController {
@@ -101,7 +101,7 @@ class ThrowableController {
             !in_array($this->throwable->getCode(), [ E_ERROR, E_PARSE, E_CORE_ERROR, E_CORE_WARNING, E_COMPILE_ERROR, E_COMPILE_WARNING ]) ||
             !extension_loaded('xdebug') || 
             !function_exists('xdebug_info') || 
-            sizeof(xdebug_info('mode')) === 0
+            sizeof(\xdebug_info('mode')) === 0
         ) {
             $frames = $this->throwable->getTrace();
         } else {

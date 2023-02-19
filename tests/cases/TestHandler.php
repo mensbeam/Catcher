@@ -6,9 +6,9 @@
  */
 
 declare(strict_types=1);
-namespace MensBeam\Foundation\Catcher\Test;
-use MensBeam\Foundation\Catcher;
-use MensBeam\Foundation\Catcher\{
+namespace MensBeam\Catcher\Test;
+use MensBeam\Catcher;
+use MensBeam\Catcher\{
     Error,
     HTMLHandler,
     PlainTextHandler,
@@ -20,7 +20,7 @@ use Eloquent\Phony\Phpunit\Phony;
 
 class TestHandler extends \PHPUnit\Framework\TestCase {
     /**
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\Handler::__construct
      */
     public function testMethod___construct__exception(): void {
         $this->expectException(\RangeException::class);
@@ -28,20 +28,20 @@ class TestHandler extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher\Handler::cleanOutputThrowable
+     * @covers \MensBeam\Catcher\Handler::cleanOutputThrowable
      * 
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
-     * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\Handler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\Handler::print
-     * @covers \MensBeam\Foundation\Catcher\JSONHandler::dispatchCallback
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getFrames
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
+     * @covers \MensBeam\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\Handler::buildOutputArray
+     * @covers \MensBeam\Catcher\Handler::dispatch
+     * @covers \MensBeam\Catcher\Handler::handle
+     * @covers \MensBeam\Catcher\Handler::handleCallback
+     * @covers \MensBeam\Catcher\Handler::print
+     * @covers \MensBeam\Catcher\JSONHandler::dispatchCallback
+     * @covers \MensBeam\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Catcher\ThrowableController::getErrorType
+     * @covers \MensBeam\Catcher\ThrowableController::getFrames
+     * @covers \MensBeam\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Catcher\ThrowableController::getThrowable
      */
     public function testMethod__cleanOutputThrowable(): void {
         // Just need to test coverage here; TestJSONHandler covers this one thoroughly.
@@ -60,16 +60,16 @@ class TestHandler extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher\Handler::handle
+     * @covers \MensBeam\Catcher\Handler::handle
      * 
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::buildOutputArray
-     * @covers \MensBeam\Foundation\Catcher\Handler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getFrames
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
+     * @covers \MensBeam\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\Handler::buildOutputArray
+     * @covers \MensBeam\Catcher\Handler::handleCallback
+     * @covers \MensBeam\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Catcher\ThrowableController::getErrorType
+     * @covers \MensBeam\Catcher\ThrowableController::getFrames
+     * @covers \MensBeam\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Catcher\ThrowableController::getThrowable
      */
     public function testMethod__handle(): void {
         // Just need to test backtrace handling. The rest has already been covered by prior tests.
@@ -82,24 +82,24 @@ class TestHandler extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher\Handler::getOption
+     * @covers \MensBeam\Catcher\Handler::getOption
      * 
-     * @covers \MensBeam\Foundation\Catcher::__construct
-     * @covers \MensBeam\Foundation\Catcher::handleError
-     * @covers \MensBeam\Foundation\Catcher::handleThrowable
-     * @covers \MensBeam\Foundation\Catcher::isErrorFatal
-     * @covers \MensBeam\Foundation\Catcher::pushHandler
-     * @covers \MensBeam\Foundation\Catcher::register
-     * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Catcher\Error::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
+     * @covers \MensBeam\Catcher::__construct
+     * @covers \MensBeam\Catcher::handleError
+     * @covers \MensBeam\Catcher::handleThrowable
+     * @covers \MensBeam\Catcher::isErrorFatal
+     * @covers \MensBeam\Catcher::pushHandler
+     * @covers \MensBeam\Catcher::register
+     * @covers \MensBeam\Catcher::unregister
+     * @covers \MensBeam\Catcher\Error::__construct
+     * @covers \MensBeam\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\Handler::dispatch
+     * @covers \MensBeam\Catcher\Handler::handle
+     * @covers \MensBeam\Catcher\PlainTextHandler::handleCallback
+     * @covers \MensBeam\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Catcher\ThrowableController::getErrorType
+     * @covers \MensBeam\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Catcher\ThrowableController::getThrowable
      */
     public function testMethod__getOption(): void {
         $h = new PlainTextHandler([ 'forceExit' => true, 'silent' => true ]);
@@ -113,9 +113,9 @@ class TestHandler extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher\Handler::setOption
+     * @covers \MensBeam\Catcher\Handler::setOption
      * 
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\Handler::__construct
      */
     public function testMethod__setOption(): void {
         $h = new PlainTextHandler([ 'forceExit' => true, 'silent' => true ]);
@@ -138,26 +138,26 @@ class TestHandler extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @covers \MensBeam\Foundation\Catcher\Handler::print
+     * @covers \MensBeam\Catcher\Handler::print
      * 
-     * @covers \MensBeam\Foundation\Catcher::__construct
-     * @covers \MensBeam\Foundation\Catcher::handleError
-     * @covers \MensBeam\Foundation\Catcher::isErrorFatal
-     * @covers \MensBeam\Foundation\Catcher::handleThrowable
-     * @covers \MensBeam\Foundation\Catcher::pushHandler
-     * @covers \MensBeam\Foundation\Catcher::register
-     * @covers \MensBeam\Foundation\Catcher::unregister
-     * @covers \MensBeam\Foundation\Catcher\Error::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::__construct
-     * @covers \MensBeam\Foundation\Catcher\Handler::dispatch
-     * @covers \MensBeam\Foundation\Catcher\Handler::handle
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::dispatchCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Foundation\Catcher\PlainTextHandler::serializeOutputThrowable
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getErrorType
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Foundation\Catcher\ThrowableController::getThrowable
+     * @covers \MensBeam\Catcher::__construct
+     * @covers \MensBeam\Catcher::handleError
+     * @covers \MensBeam\Catcher::isErrorFatal
+     * @covers \MensBeam\Catcher::handleThrowable
+     * @covers \MensBeam\Catcher::pushHandler
+     * @covers \MensBeam\Catcher::register
+     * @covers \MensBeam\Catcher::unregister
+     * @covers \MensBeam\Catcher\Error::__construct
+     * @covers \MensBeam\Catcher\Handler::__construct
+     * @covers \MensBeam\Catcher\Handler::dispatch
+     * @covers \MensBeam\Catcher\Handler::handle
+     * @covers \MensBeam\Catcher\PlainTextHandler::dispatchCallback
+     * @covers \MensBeam\Catcher\PlainTextHandler::handleCallback
+     * @covers \MensBeam\Catcher\PlainTextHandler::serializeOutputThrowable
+     * @covers \MensBeam\Catcher\ThrowableController::__construct
+     * @covers \MensBeam\Catcher\ThrowableController::getErrorType
+     * @covers \MensBeam\Catcher\ThrowableController::getPrevious
+     * @covers \MensBeam\Catcher\ThrowableController::getThrowable
      */
     public function testMethod__print(): void {
         // Just need to test forceOutputNow for coverage purposes

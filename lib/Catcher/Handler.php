@@ -6,7 +6,7 @@
  */
 
 declare(strict_types=1);
-namespace MensBeam\Foundation\Catcher;
+namespace MensBeam\Catcher;
 
 
 abstract class Handler {
