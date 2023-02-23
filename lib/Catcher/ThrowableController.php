@@ -1,8 +1,8 @@
 <?php
-/** 
+/**
  * @license MIT
  * Copyright 2022 Dustin Wilson, et al.
- * See LICENSE and AUTHORS files for details 
+ * See LICENSE and AUTHORS files for details
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ class ThrowableController {
         }
 
         switch ($this->throwable->getCode()) {
-            case \E_ERROR: 
+            case \E_ERROR:
                 $this->errorType = 'PHP Fatal Error';
             break;
             case \E_WARNING:
@@ -49,7 +49,7 @@ class ThrowableController {
             case \E_NOTICE:
                 $this->errorType = 'PHP Notice';
             break;
-            case \E_CORE_ERROR: 
+            case \E_CORE_ERROR:
                 $this->errorType = 'PHP Core Error';
             break;
             case \E_CORE_WARNING:
@@ -99,17 +99,17 @@ class ThrowableController {
         if (
             !$this->throwable instanceof \Error ||
             !in_array($this->throwable->getCode(), [ E_ERROR, E_PARSE, E_CORE_ERROR, E_CORE_WARNING, E_COMPILE_ERROR, E_COMPILE_WARNING ]) ||
-            !extension_loaded('xdebug') || 
-            !function_exists('xdebug_info') || 
-            sizeof(\xdebug_info('mode')) === 0
+            !extension_loaded('xdebug') ||
+            !function_exists('xdebug_info') ||
+            sizeof(xdebug_info('mode')) === 0
         ) {
             $frames = $this->throwable->getTrace();
         } else {
             $frames = array_values(array_diff_key(xdebug_get_function_stack(), debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS)));
         }
 
-        // PHP for some stupid reason thinks it's okay not to provide line numbers and file 
-        // names when using call_user_func_array; this fixes that. 
+        // PHP for some stupid reason thinks it's okay not to provide line numbers and file
+        // names when using call_user_func_array; this fixes that.
         // (https://bugs.php.net/bug.php?id=44428)
         foreach ($frames as $key => $frame) {
             if (empty($frame['file'])) {
@@ -119,9 +119,9 @@ class ThrowableController {
                 $next = $frames[$key + 1] ?? [];
 
                 if (
-                    !empty($next['file']) && 
+                    !empty($next['file']) &&
                     !empty($next['function']) &&
-                    !empty($next['line']) && 
+                    !empty($next['line']) &&
                     str_contains($next['function'], 'call_user_func')
                 ) {
                     $file = $next['file'];
@@ -164,7 +164,7 @@ class ThrowableController {
         if ($this->throwable instanceof \Error) {
             $errorType = $this->getErrorType();
             if ($errorType !== null) {
-                $f['code'] = $this->throwable->getCode(); 
+                $f['code'] = $this->throwable->getCode();
                 $f['errorType'] = $errorType;
             }
         }

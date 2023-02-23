@@ -1,8 +1,8 @@
 <?php
-/** 
+/**
  * @license MIT
  * Copyright 2022 Dustin Wilson, et al.
- * See LICENSE and AUTHORS files for details 
+ * See LICENSE and AUTHORS files for details
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ class PlainTextHandler extends Handler {
                 if ($o['outputCode'] & self::SILENT) {
                     continue;
                 }
-    
+
                 $this->print($this->serializeOutputThrowable($o));
             }
         }
@@ -47,34 +47,35 @@ class PlainTextHandler extends Handler {
     }
 
     protected function log(\Throwable $throwable, string $message): void {
+        $context = [ 'exception' => $throwable ];
         if ($throwable instanceof \Error) {
             switch ($throwable->getCode()) {
                 case \E_NOTICE:
                 case \E_USER_NOTICE:
                 case \E_STRICT:
-                    $this->_logger->notice($message);
+                    $this->_logger->notice($message, $context);
                 break;
                 case \E_WARNING:
                 case \E_COMPILE_WARNING:
                 case \E_USER_WARNING:
                 case \E_DEPRECATED:
                 case \E_USER_DEPRECATED:
-                    $this->_logger->warning($message);
+                    $this->_logger->warning($message, $context);
                 break;
                 case \E_RECOVERABLE_ERROR:
-                    $this->_logger->error($message);
+                    $this->_logger->error($message, $context);
                 break;
                 case \E_PARSE:
                 case \E_CORE_ERROR:
                 case \E_COMPILE_ERROR:
-                    $this->_logger->alert($message);
+                    $this->_logger->alert($message, $context);
                 break;
-                default: $this->_logger->critical($message);
+                default: $this->_logger->critical($message, $context);
             }
         } elseif ($throwable instanceof \Exception && ($throwable instanceof \PharException || $throwable instanceof \RuntimeException)) {
-            $this->_logger->alert($message);
+            $this->_logger->alert($message, $context);
         } else {
-            $this->_logger->critical($message);
+            $this->_logger->critical($message, $context);
         }
     }
 
@@ -83,7 +84,7 @@ class PlainTextHandler extends Handler {
         if ($class !== null && !empty($outputThrowable['errorType'])) {
             $class = "{$outputThrowable['errorType']} ($class)";
         }
-        
+
         $output = sprintf(
             '%s: %s in file %s on line %d' . \PHP_EOL,
             $class,
@@ -118,7 +119,7 @@ class PlainTextHandler extends Handler {
                     } elseif (!empty($frame['function'])) {
                         $method = $frame['function'];
                     }
-                    
+
                     $output .= sprintf("%{$maxDigits}d. %s  %s:%d" . \PHP_EOL,
                         $key + 1,
                         $method,

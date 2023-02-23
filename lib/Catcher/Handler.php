@@ -1,8 +1,8 @@
 <?php
-/** 
+/**
  * @license MIT
  * Copyright 2022 Dustin Wilson, et al.
- * See LICENSE and AUTHORS files for details 
+ * See LICENSE and AUTHORS files for details
  */
 
 declare(strict_types=1);
@@ -23,27 +23,27 @@ abstract class Handler {
     public const NOW = 32;
 
 
-    /** 
+    /**
      * Array of HandlerOutputs the handler creates
-     * 
-     * @var HandlerOutput[] 
+     *
+     * @var array[]
      */
     protected array $outputBuffer = [];
 
     /** The number of backtrace frames in which to print arguments; defaults to 5 */
     protected int $_backtraceArgFrameLimit = 5;
-    /** 
-     * The character encoding used for errors; only used if headers weren't sent before 
-     * an error occurred 
+    /**
+     * The character encoding used for errors; only used if headers weren't sent before
+     * an error occurred
      */
     protected string $_charset = 'UTF-8';
     /** If true the handler will force break the loop through the stack of handlers */
     protected bool $_forceBreak = false;
     /** If true the handler will force an exit */
     protected bool $_forceExit = false;
-    /** 
-     * If true the handler will output as soon as possible; however, if silent 
-     * is true the handler will output nothing 
+    /**
+     * If true the handler will output as soon as possible; however, if silent
+     * is true the handler will output nothing
      */
     protected bool $_forceOutputNow = false;
     /** The HTTP code to be sent; possible values: 200, 400-599 */
@@ -60,9 +60,9 @@ abstract class Handler {
     protected bool $_silent = false;
     /** The PHP-standard date format which to use for timestamps in output */
     protected string $_timeFormat = 'Y-m-d\TH:i:s.vO';
-    /** 
+    /**
      * A user-defined closure to use when printing arguments in backtraces
-     * 
+     *
      * @var ?(mixed): string|bool
      */
     protected ?\Closure $_varExporter = null;

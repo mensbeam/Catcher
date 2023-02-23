@@ -1,8 +1,8 @@
 <?php
-/** 
+/**
  * @license MIT
  * Copyright 2022 Dustin Wilson, et al.
- * See LICENSE and AUTHORS files for details 
+ * See LICENSE and AUTHORS files for details
  */
 
 declare(strict_types=1);
@@ -23,15 +23,15 @@ class Catcher {
     /** When set to true Catcher will throw errors as throwables */
     public bool $throwErrors = true;
 
-    /** 
-     * Stores the error reporting level set by Catcher to compare against when  
-     * unregistering 
+    /**
+     * Stores the error reporting level set by Catcher to compare against when
+     * unregistering
      */
     protected ?int $errorReporting = null;
-    /** 
+    /**
      * Array of handlers the exceptions are passed to
-     * 
-     * @var Handler[] 
+     *
+     * @var Handler[]
      */
     protected array $handlers = [];
     /** Flag set when the shutdown handler is run */
@@ -71,7 +71,7 @@ class Catcher {
         if (count($this->handlers) === 1) {
             throw new \Exception("Popping the last handler will cause the Catcher to have zero handlers; there must be at least one\n");
         }
-        
+
         return array_pop($this->handlers);
     }
 
@@ -97,7 +97,7 @@ class Catcher {
             return false;
         }
 
-        // If the current error reporting level has E_ERROR then remove it and store for 
+        // If the current error reporting level has E_ERROR then remove it and store for
         // comparison when unregistering
         $errorReporting = error_reporting();
         if ($errorReporting & \E_ERROR) {
@@ -121,7 +121,7 @@ class Catcher {
         if (count($this->handlers) === 1) {
             throw new \Exception("Shifting the last handler will cause the Catcher to have zero handlers; there must be at least one\n");
         }
-        
+
         return array_shift($this->handlers);
     }
 
@@ -133,7 +133,7 @@ class Catcher {
         restore_error_handler();
         restore_exception_handler();
 
-        // If error reporting has been set when registering and the error reporting level 
+        // If error reporting has been set when registering and the error reporting level
         // is the same as it was when it was set then add E_ERROR back to the error
         $errorReporting = error_reporting();
         if ($this->errorReporting !== null && $this->errorReporting === $errorReporting) {
@@ -172,21 +172,21 @@ class Catcher {
     }
 
 
-    /** 
-     * Converts regular errors into throwable Errors for easier handling; meant to be 
+    /**
+     * Converts regular errors into throwable Errors for easier handling; meant to be
      * used with set_error_handler.
-     * 
+     *
      * @internal
      */
     public function handleError(int $code, string $message, ?string $file = null, ?int $line = null): bool {
         if ($code && $code & error_reporting()) {
             $error = new Error($message, $code, $file, $line);
             if ($this->throwErrors) {
-                // The point of this library is to allow treating of errors as if they were 
-                // exceptions but instead have things like warnings, notices, etc. not stop 
-                // execution. You normally can't have it both ways. So, what's going on here is 
-                // that if the error wouldn't normally stop execution the newly-created Error 
-                // throwable is thrown in a fork instead, allowing execution to resume in the 
+                // The point of this library is to allow treating of errors as if they were
+                // exceptions but instead have things like warnings, notices, etc. not stop
+                // execution. You normally can't have it both ways. So, what's going on here is
+                // that if the error wouldn't normally stop execution the newly-created Error
+                // throwable is thrown in a fork instead, allowing execution to resume in the
                 // parent process.
                 if ($this->isErrorFatal($code)) {
                     throw $error;
@@ -199,7 +199,7 @@ class Catcher {
                         // This can't be covered because it happens in the fork
                         throw $error; // @codeCoverageIgnore
                     }
-                    
+
                     pcntl_wait($status);
                     return true;
                 }
@@ -208,14 +208,14 @@ class Catcher {
             $this->handleThrowable($error);
             return true;
         }
-        
+
         // If preventing exit we don't want a false here to halt processing
         return ($this->preventExit);
     }
 
-    /** 
+    /**
      * Handles both Exceptions and Errors; meant to be used with set_exception_handler.
-     * 
+     *
      * @internal
      */
     public function handleThrowable(\Throwable $throwable): void {
@@ -235,7 +235,7 @@ class Catcher {
         if (
             $this->isShuttingDown ||
             $controlCode & Handler::EXIT ||
-            $throwable instanceof \Exception || 
+            $throwable instanceof \Exception ||
             ($throwable instanceof Error && $this->isErrorFatal($throwable->getCode())) ||
             (!$throwable instanceof Error && $throwable instanceof \Error)
         ) {
@@ -248,7 +248,7 @@ class Catcher {
 
             $this->lastThrowable = $throwable;
 
-            // Don't want to exit here when shutting down so any shutdown functions further 
+            // Don't want to exit here when shutting down so any shutdown functions further
             // down the stack still run.
             if (!$this->preventExit && !$this->isShuttingDown) {
                 $this->exit(max($throwable->getCode(), 1));
@@ -258,9 +258,9 @@ class Catcher {
         $this->lastThrowable = $throwable;
     }
 
-    /** 
+    /**
      * Handles shutdowns, passes all possible built-in error codes to the error handler.
-     * 
+     *
      * @internal
      */
     public function handleShutdown(): void {

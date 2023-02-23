@@ -10,7 +10,7 @@ function help($error = true): void {
     Usage:
         run test [additional_phpunit_options]
         run --help
-    
+
     USAGE;
 
     if ($error) {
@@ -48,7 +48,7 @@ switch ($argv[1]) {
     case '--help':
         help(false);
     break;
-    default: 
+    default:
         help();
 }
 
