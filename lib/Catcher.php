@@ -8,26 +8,30 @@
 declare(strict_types=1);
 namespace MensBeam;
 use MensBeam\Catcher\{
+    ArgumentCountError,
     Error,
     Handler,
     PlainTextHandler,
     ThrowableController,
+    UnderflowException
 };
 
 
 class Catcher {
-    /** Fork when throwing non-exiting errors, if available */
-    public bool $forking = true;
+    public const THROW_NO_ERRORS = 0;
+    public const THROW_FATAL_ERRORS = 1;
+    public const THROW_ALL_ERRORS = 2;
+
     /** When set to true Catcher won't exit when instructed */
     public bool $preventExit = false;
-    /** When set to true Catcher will throw errors as throwables */
-    public bool $throwErrors = true;
+    /** Determines how errors are handled; THROW_* constants exist to control */
+    public int $errorHandlingMethod = self::THROW_FATAL_ERRORS;
 
     /**
      * Stores the error reporting level set by Catcher to compare against when
      * unregistering
      */
-    protected ?int $errorReporting = null;
+    public ?int $errorReporting = null;
     /**
      * Array of handlers the exceptions are passed to
      *
@@ -69,7 +73,7 @@ class Catcher {
 
     public function popHandler(): Handler {
         if (count($this->handlers) === 1) {
-            throw new \Exception("Popping the last handler will cause the Catcher to have zero handlers; there must be at least one\n");
+            throw new UnderflowException('Popping the last handler will cause the Catcher to have zero handlers; there must be at least one');
         }
 
         return array_pop($this->handlers);
@@ -77,19 +81,10 @@ class Catcher {
 
     public function pushHandler(Handler ...$handlers): void {
         if (count($handlers) === 0) {
-            throw new \ArgumentCountError(__METHOD__ . "expects at least 1 argument, 0 given\n");
+            throw new ArgumentCountError(__METHOD__ . 'expects at least 1 argument, 0 given');
         }
 
-        $prev = [];
-        foreach ($handlers as $h) {
-            if (in_array($h, $this->handlers, true) || in_array($h, $prev, true)) {
-                trigger_error("Handlers must be unique; skipping\n", \E_USER_WARNING);
-                continue;
-            }
-
-            $prev[] = $h;
-            $this->handlers[] = $h;
-        }
+        $this->handlers = [ ...$this->handlers, ...$handlers ];
     }
 
     public function register(): bool {
@@ -108,6 +103,7 @@ class Catcher {
         set_error_handler([ $this, 'handleError' ]);
         set_exception_handler([ $this, 'handleThrowable' ]);
         register_shutdown_function([ $this, 'handleShutdown' ]);
+
         $this->registered = true;
         return true;
     }
@@ -119,7 +115,7 @@ class Catcher {
 
     public function shiftHandler(): Handler {
         if (count($this->handlers) === 1) {
-            throw new \Exception("Shifting the last handler will cause the Catcher to have zero handlers; there must be at least one\n");
+            throw new UnderflowException('Shifting the last handler will cause the Catcher to have zero handlers; there must be at least one');
         }
 
         return array_shift($this->handlers);
@@ -147,28 +143,10 @@ class Catcher {
 
     public function unshiftHandler(Handler ...$handlers): void {
         if (count($handlers) === 0) {
-            throw new \ArgumentCountError(__METHOD__ . "expects at least 1 argument, 0 given\n");
+            throw new ArgumentCountError(__METHOD__ . 'expects at least 1 argument, 0 given');
         }
 
-        $modified = false;
-        $prev = [];
-        foreach ($handlers as $v => $h) {
-            if (in_array($h, $this->handlers, true) || in_array($h, $prev, true)) {
-                trigger_error("Handlers must be unique; skipping\n", \E_USER_WARNING);
-                unset($handlers[$v]);
-                $modified = true;
-                continue;
-            }
-
-            $prev[] = $h;
-        }
-        if ($modified) {
-            $handlers = array_values($handlers);
-        }
-
-        if (count($handlers) > 0) {
-            $this->handlers = [ ...$handlers, ...$this->handlers ];
-        }
+        $this->handlers = [ ...$handlers, ...$this->handlers ];
     }
 
 
@@ -181,32 +159,13 @@ class Catcher {
     public function handleError(int $code, string $message, ?string $file = null, ?int $line = null): bool {
         if ($code && $code & error_reporting()) {
             $error = new Error($message, $code, $file, $line);
-            if ($this->throwErrors) {
-                // The point of this library is to allow treating of errors as if they were
-                // exceptions but instead have things like warnings, notices, etc. not stop
-                // execution. You normally can't have it both ways. So, what's going on here is
-                // that if the error wouldn't normally stop execution the newly-created Error
-                // throwable is thrown in a fork instead, allowing execution to resume in the
-                // parent process.
-                if ($this->isErrorFatal($code)) {
-                    throw $error;
-                } elseif ($this->forking && \PHP_SAPI === 'cli' && function_exists('pcntl_fork')) {
-                    $pid = pcntl_fork();
-                    if ($pid === -1) {
-                        // This can't be covered unless it is possible to fake a misconfigured system
-                        throw new \Exception(message: 'Could not create fork to throw Error', previous: $error); // @codeCoverageIgnore
-                    } elseif (!$pid) {
-                        // This can't be covered because it happens in the fork
-                        throw $error; // @codeCoverageIgnore
-                    }
-
-                    pcntl_wait($status);
-                    return true;
-                }
+            if ($this->errorHandlingMethod > self::THROW_NO_ERRORS && ($this->errorHandlingMethod === self::THROW_ALL_ERRORS || $this->isErrorFatal($code)) && !$this->isShuttingDown) {
+                $this->lastThrowable = $error;
+                throw $error;
+            } else {
+                $this->handleThrowable($error);
+                return true;
             }
-
-            $this->handleThrowable($error);
-            return true;
         }
 
         // If preventing exit we don't want a false here to halt processing
@@ -220,21 +179,24 @@ class Catcher {
      */
     public function handleThrowable(\Throwable $throwable): void {
         $controller = new ThrowableController($throwable);
+        $exit = false;
         foreach ($this->handlers as $h) {
             $output = $h->handle($controller);
-            if ($output['outputCode'] & Handler::NOW) {
-                $h->dispatch();
-            }
 
-            $controlCode = $output['controlCode'];
-            if ($controlCode & Handler::BREAK) {
+            if (!$this->isShuttingDown && $output['code'] & Handler::NOW) {
+                $h();
+            }
+            if ($output['code'] & Handler::EXIT) {
+                $exit = true;
+            }
+            if (($output['code'] & Handler::BUBBLES) === 0) {
                 break;
             }
         }
 
         if (
+            $exit ||
             $this->isShuttingDown ||
-            $controlCode & Handler::EXIT ||
             $throwable instanceof \Exception ||
             ($throwable instanceof Error && $this->isErrorFatal($throwable->getCode())) ||
             (!$throwable instanceof Error && $throwable instanceof \Error)
@@ -243,10 +205,8 @@ class Catcher {
                 if ($this->isShuttingDown) {
                     $h->setOption('outputBacktrace', false);
                 }
-                $h->dispatch();
+                $h();
             }
-
-            $this->lastThrowable = $throwable;
 
             // Don't want to exit here when shutting down so any shutdown functions further
             // down the stack still run.
@@ -268,19 +228,18 @@ class Catcher {
             return;
         }
 
-        $this->throwErrors = false;
         $this->isShuttingDown = true;
         if ($error = $this->getLastError()) {
             if ($this->isErrorFatal($error['type'])) {
                 $errorReporting = error_reporting();
-                if ($this->errorReporting !== null && $this->errorReporting === $errorReporting && !($this->errorReporting & \E_ERROR)) {
+                if ($this->errorReporting !== null && $this->errorReporting === $errorReporting && ($this->errorReporting & \E_ERROR) === 0) {
                     error_reporting($errorReporting | \E_ERROR);
                 }
                 $this->handleError($error['type'], $error['message'], $error['file'], $error['line']);
             }
         } else {
             foreach ($this->handlers as $h) {
-                $h->dispatch();
+                $h();
             }
         }
     }

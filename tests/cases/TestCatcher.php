@@ -1,499 +1,280 @@
 <?php
-/** 
+/**
  * @license MIT
  * Copyright 2022 Dustin Wilson, et al.
- * See LICENSE and AUTHORS files for details 
+ * See LICENSE and AUTHORS files for details
  */
 
 declare(strict_types=1);
 namespace MensBeam\Catcher\Test;
-use MensBeam\Catcher;
+use MensBeam\Catcher,
+    Phake,
+    Phake\IMock;
 use MensBeam\Catcher\{
+    ArgumentCountError,
     Error,
-    HTMLHandler,
-    JSONHandler,
-    PlainTextHandler
+    PlainTextHandler,
+    UnderflowException
 };
-use Eloquent\Phony\Phpunit\Phony;
 
 
+/** @covers \MensBeam\Catcher */
 class TestCatcher extends \PHPUnit\Framework\TestCase {
-    /**
-     * @covers \MensBeam\Catcher::__construct
-     * 
-     * @covers \MensBeam\Catcher::getHandlers
-     * @covers \MensBeam\Catcher::pushHandler
-     * @covers \MensBeam\Catcher::register
-     * @covers \MensBeam\Catcher::unregister
-     * @covers \MensBeam\Catcher\Handler::__construct
-     * @covers \MensBeam\Catcher\HTMLHandler::__construct
-     */
-    public function testMethod___construct(): void {
-        $c = new Catcher();
-        $c->preventExit = true;
-        $c->throwErrors = false;
-        $this->assertSame(1, count($c->getHandlers()));
-        $this->assertSame(PlainTextHandler::class, $c->getHandlers()[0]::class);
-        $c->unregister();
+    protected ?Catcher $catcher = null;
 
-        $c = new Catcher(
-            new PlainTextHandler(),
-            new HTMLHandler(),
-            new JSONHandler()
-        );
-        $c->preventExit = true;
-        $c->throwErrors = false;
-        $this->assertSame('MensBeam\Catcher', $c::class);
-        $this->assertSame(3, count($c->getHandlers()));
+
+    public function setUp(): void {
+        if ($this->catcher !== null) {
+            $this->catcher->unregister();
+        }
+        $this->catcher = new Catcher();
+        $this->catcher->preventExit = true;
+
+        // Do this instead of specifying the option in the constructor for coverage
+        // purposes...
+        $handlers = $this->catcher->getHandlers();
+        $handlers[0]->setOption('silent', true);
+    }
+
+    public function tearDown(): void {
+        $this->catcher->unregister();
+        $this->catcher = null;
+        error_reporting(\E_ALL);
+    }
+
+
+    public function testConstructor(): void {
+        $h = $this->catcher->getHandlers();
+        $this->assertEquals(1, count($h));
+        $this->assertInstanceOf(PlainTextHandler::class, $h[0]);
+    }
+
+    /** @dataProvider provideErrorHandlingTests */
+    public function testErrorHandling(int $code): void {
+        $t = null;
+        try {
+            trigger_error('Ook!', $code);
+        } catch (\Throwable $t) {} finally {
+            $t = ($t === null) ? $this->catcher->getLastThrowable() : $t;
+            $this->assertSame(Error::class, $t::class);
+            $this->assertSame($code, $t->getCode());
+            $this->assertSame($t, $this->catcher->getLastThrowable());
+        }
+    }
+
+    public function testExit(): void {
+        $this->catcher->unregister();
+        $h = Phake::partialMock(TestingHandler::class);
+        $this->catcher = $m = Phake::partialMock(Catcher::class, $h);
+        $m->errorHandlingMethod = Catcher::THROW_NO_ERRORS;
+        Phake::when($m)->exit->thenReturn(null);
+        Phake::when($m)->handleShutdown()->thenReturn(null);
+
+        trigger_error('Ook!', \E_USER_ERROR);
+
+        Phake::verify($h, Phake::times(1))->invokeCallback();
+    }
+
+    public function testHandlerBubbling(): void {
+        $this->catcher->unregister();
+
+        $h1 = Phake::partialMock(TestingHandler::class, [ 'bubbles' => false ]);
+        $h2 = Phake::partialMock(TestingHandler::class);
+        $this->catcher = $m = Phake::partialMock(Catcher::class, $h1, $h2);
+        $m->errorHandlingMethod = Catcher::THROW_NO_ERRORS;
+        $m->preventExit = true;
+
+        trigger_error('Ook!', \E_USER_ERROR);
+        Phake::verify($m)->handleError(\E_USER_ERROR, 'Ook!', __FILE__, __LINE__ - 1);
+        Phake::verify($m)->handleThrowable($m->getLastThrowable());
+        Phake::verify($h1)->invokeCallback();
+        Phake::verify($h2, Phake::never())->invokeCallback();
+    }
+
+    public function testHandlerForceExiting(): void {
+        $this->catcher->setHandlers(new TestingHandler([ 'forceExit' => true ]));
+        $this->catcher->errorHandlingMethod = Catcher::THROW_NO_ERRORS;
+        $this->catcher->preventExit = true;
+
+        trigger_error('Ook', \E_USER_ERROR);
+        $this->assertSame(Error::class, $this->catcher->getLastThrowable()::class);
+    }
+
+    public function testRegistration(): void {
+        $this->assertTrue($this->catcher->isRegistered());
+        $this->assertFalse($this->catcher->register());
+        $this->assertTrue($this->catcher->unregister());
+        $this->assertFalse($this->catcher->unregister());
+        $this->assertFalse($this->catcher->isRegistered());
+    }
+
+    /** @dataProvider provideShutdownTests */
+    public function testShutdownHandling(\Closure $closure): void {
+        $this->catcher->unregister();
+
+        $h1 = Phake::partialMock(TestingHandler::class);
+        $this->catcher = $m = Phake::partialMock(Catcher::class, $h1);
+        $closure($m, $h1);
+    }
+
+    public function testStackManipulation(): void {
+        $c = $this->catcher;
+        $c->pushHandler(new TestingHandler(options: [ 'name' => 'ook' ]), new TestingHandler(options: [ 'name' => 'eek' ]));
         $h = $c->getHandlers();
-        $this->assertSame(PlainTextHandler::class, $h[0]::class);
-        $this->assertSame(HTMLHandler::class, $h[1]::class);
-        $this->assertSame(JSONHandler::class, $h[2]::class);
-        $c->unregister();
-    }
+        $this->assertEquals(3, count($h));
+        $this->assertSame('ook', $h[1]->getOption('name'));
+        $this->assertSame('eek', $h[2]->getOption('name'));
 
-    /**
-     * @covers \MensBeam\Catcher::getLastThrowable
-     * 
-     * @covers \MensBeam\Catcher::__construct
-     * @covers \MensBeam\Catcher::handleError
-     * @covers \MensBeam\Catcher::handleThrowable
-     * @covers \MensBeam\Catcher::isErrorFatal
-     * @covers \MensBeam\Catcher::pushHandler
-     * @covers \MensBeam\Catcher::register
-     * @covers \MensBeam\Catcher::unregister
-     * @covers \MensBeam\Catcher\Error::__construct
-     * @covers \MensBeam\Catcher\Handler::__construct
-     * @covers \MensBeam\Catcher\Handler::buildOutputArray
-     * @covers \MensBeam\Catcher\Handler::dispatch
-     * @covers \MensBeam\Catcher\Handler::handle
-     * @covers \MensBeam\Catcher\PlainTextHandler::dispatchCallback
-     * @covers \MensBeam\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Catcher\ThrowableController::getErrorType
-     * @covers \MensBeam\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Catcher\ThrowableController::getThrowable
-     */
-    public function testMethod_getLastThrowable(): void {
-        $c = new Catcher(new PlainTextHandler([ 'silent' => true ]));
-        $c->preventExit = true;
-        $c->throwErrors = false;
-        trigger_error('Ook!', \E_USER_WARNING);
-        $this->assertSame(\E_USER_WARNING, $c->getLastThrowable()->getCode());
-        $c->unregister();
-    }
+        $this->assertInstanceOf(PlainTextHandler::class, $c->shiftHandler());
+        $h = $c->getHandlers();
+        $this->assertEquals(2, count($h));
+        $this->assertSame('ook', $h[0]->getOption('name'));
+        $this->assertSame('eek', $h[1]->getOption('name'));
 
-    /**
-     * @covers \MensBeam\Catcher::pushHandler
-     * 
-     * @covers \MensBeam\Catcher::__construct
-     * @covers \MensBeam\Catcher::register
-     * @covers \MensBeam\Catcher::unregister
-     * @covers \MensBeam\Catcher\Handler::__construct
-     */
-    public function testMethod_pushHandler(): void {
-        $e = null;
-        set_error_handler(function($errno) use (&$e) {
-            $e = $errno;
-        });
+        $p = $c->popHandler();
+        $this->assertInstanceOf(TestingHandler::class, $p);
+        $h = $c->getHandlers();
+        $this->assertEquals(1, count($h));
+        $this->assertSame('eek', $p->getOption('name'));
+        $this->assertSame('ook', $h[0]->getOption('name'));
 
-        $h = new PlainTextHandler();
-        $c = new Catcher($h, $h);
-        $c->preventExit = true;
-        $c->throwErrors = false;
-        $c->unregister();
-        $this->assertSame(\E_USER_WARNING, $e);
-        $e = null;
+        $c->unshiftHandler($p);
+        $h = $c->getHandlers();
+        $this->assertEquals(2, count($h));
+        $this->assertSame('eek', $h[0]->getOption('name'));
+        $this->assertSame('ook', $h[1]->getOption('name'));
 
-        $c = new Catcher();
-        $c->preventExit = true;
-        $c->throwErrors = false;
-        $c->unregister();
-        $c->pushHandler($h, $h);
-        $this->assertSame(\E_USER_WARNING, $e);
-
-        restore_error_handler();
-
-        $c = new Catcher();
-        $c->unregister();
-
-        $e = null;
-        try {
-            $c->pushHandler();
-        } catch (\Throwable $t) {
-            $e = $t::class;
-        } finally {
-            $this->assertSame(\ArgumentCountError::class, $e);
-        }
-    }
-
-    /**
-     * @covers \MensBeam\Catcher::popHandler
-     * 
-     * @covers \MensBeam\Catcher::__construct
-     * @covers \MensBeam\Catcher::pushHandler
-     * @covers \MensBeam\Catcher::register
-     * @covers \MensBeam\Catcher::unregister
-     * @covers \MensBeam\Catcher\Handler::__construct
-     * @covers \MensBeam\Catcher\HTMLHandler::__construct
-     */
-    public function testMethod_popHandler(): void {
-        $h = [
-            new HTMLHandler(),
-            new PlainTextHandler(),
-            new JSONHandler()
-        ];
-        $c = new Catcher(...$h);
-        $c->preventExit = true;
-        $c->throwErrors = false;
-        $hh = $c->popHandler();
-        $this->assertSame($h[2], $hh);
-        $hh = $c->popHandler();
-        $this->assertSame($h[1], $hh);
-
-        $e = null;
-        try {
-            $c->popHandler();
-        } catch (\Throwable $t) {
-            $e = $t::class;
-        } finally {
-            $c->unregister();
-            $this->assertSame(\Exception::class, $e);
-        }
-    }
-
-    /**
-     * @covers \MensBeam\Catcher::isRegistered
-     * 
-     * @covers \MensBeam\Catcher::__construct
-     * @covers \MensBeam\Catcher::pushHandler
-     * @covers \MensBeam\Catcher::register
-     * @covers \MensBeam\Catcher::unregister
-     * @covers \MensBeam\Catcher\Handler::__construct
-     */
-    public function testMethod_register(): void {
-        $c = new Catcher();
-        $c->preventExit = true;
-        $c->throwErrors = false;
-        $this->assertTrue($c->isRegistered());
-        $this->assertFalse($c->register());
-        $c->unregister();
-        $this->assertFalse($c->isRegistered());
-    }
-
-    /**
-     * @covers \MensBeam\Catcher::setHandlers
-     * 
-     * @covers \MensBeam\Catcher::__construct
-     * @covers \MensBeam\Catcher::getHandlers
-     * @covers \MensBeam\Catcher::pushHandler
-     * @covers \MensBeam\Catcher::register
-     * @covers \MensBeam\Catcher::unregister
-     * @covers \MensBeam\Catcher\Handler::__construct
-     */
-    public function testMethod_setHandlers(): void {
-        $c = new Catcher();
-        $c->preventExit = true;
-        $c->throwErrors = false;
         $c->setHandlers(new PlainTextHandler());
-        $h = $c->getHandlers();
-        $this->assertSame(1, count($h));
-        $this->assertSame(PlainTextHandler::class, $h[0]::class);
-        $c->unregister();
+        $this->assertEquals(1, count($c->getHandlers()));
     }
 
-    /**
-     * @covers \MensBeam\Catcher::shiftHandler
-     * 
-     * @covers \MensBeam\Catcher::__construct
-     * @covers \MensBeam\Catcher::pushHandler
-     * @covers \MensBeam\Catcher::register
-     * @covers \MensBeam\Catcher::unregister
-     * @covers \MensBeam\Catcher\Handler::__construct
-     * @covers \MensBeam\Catcher\HTMLHandler::__construct
-     */
-    public function testMethod_shiftHandler(): void {
-        $h = [
-            new HTMLHandler(),
-            new PlainTextHandler(),
-            new JSONHandler()
-        ];
-        $c = new Catcher(...$h);
-        $c->preventExit = true;
-        $c->throwErrors = false;
-        $c->unregister();
-        $hh = $c->shiftHandler();
-        $this->assertSame($h[0], $hh);
-        $hh = $c->shiftHandler();
-        $this->assertSame($h[1], $hh);
-
-        $e = null;
-        try {
-            $c->shiftHandler();
-        } catch (\Throwable $t) {
-            $e = $t::class;
-        } finally {
-            $this->assertSame(\Exception::class, $e);
-        }
-    }
-
-    /**
-     * @covers \MensBeam\Catcher::unregister
-     * 
-     * @covers \MensBeam\Catcher::__construct
-     * @covers \MensBeam\Catcher::pushHandler
-     * @covers \MensBeam\Catcher::register
-     * @covers \MensBeam\Catcher\Handler::__construct
-     */
-    public function testMethod_unregister(): void {
-        $c = new Catcher();
-        $c->preventExit = true;
-        $c->throwErrors = false;
-        $c->unregister();
-        $this->assertFalse($c->unregister());
-    }
-
-    /**
-     * @covers \MensBeam\Catcher::unshiftHandler
-     * 
-     * @covers \MensBeam\Catcher::__construct
-     * @covers \MensBeam\Catcher::getHandlers
-     * @covers \MensBeam\Catcher::pushHandler
-     * @covers \MensBeam\Catcher::register
-     * @covers \MensBeam\Catcher::unregister
-     * @covers \MensBeam\Catcher\Handler::__construct
-     * @covers \MensBeam\Catcher\HTMLHandler::__construct
-     */
-    public function testMethod_unshiftHandler(): void {
-        $c = new Catcher(new PlainTextHandler());
-        $c->preventExit = true;
-        $c->throwErrors = false;
-        $c->unshiftHandler(new JSONHandler(), new HTMLHandler(), new PlainTextHandler());
-        $h = $c->getHandlers();
-        $this->assertSame(4, count($h));
-        $this->assertSame(JSONHandler::class, $h[0]::class);
-        $this->assertSame(HTMLHandler::class, $h[1]::class);
-        $this->assertSame(PlainTextHandler::class, $h[2]::class);
-        $this->assertSame(PlainTextHandler::class, $h[3]::class);
-
-        $e = null;
-        set_error_handler(function($errno) use (&$e) {
-            $e = $errno;
-        });
-
-        $c->unshiftHandler($h[0]);
-        $this->assertSame(\E_USER_WARNING, $e);
-        $e = null;
-        $h = new PlainTextHandler();
-        $c->unshiftHandler($h, $h);
-        $this->assertSame(\E_USER_WARNING, $e);
-
-        restore_error_handler();
-        $c->unregister();
-
-        $c = new Catcher();
-        $c->preventExit = true;
-        $c->throwErrors = false;
-        $c->unregister();
-
-        $e = null;
-        try {
-            $c->unshiftHandler();
-        } catch (\Throwable $t) {
-            $e = $t::class;
-        } finally {
-            $this->assertSame(\ArgumentCountError::class, $e);
-        }
-    }
-
-    /**
-     * @covers \MensBeam\Catcher::handleError
-     * 
-     * @covers \MensBeam\Catcher::__construct
-     * @covers \MensBeam\Catcher::getLastThrowable
-     * @covers \MensBeam\Catcher::handleThrowable
-     * @covers \MensBeam\Catcher::isErrorFatal
-     * @covers \MensBeam\Catcher::pushHandler
-     * @covers \MensBeam\Catcher::register
-     * @covers \MensBeam\Catcher::unregister
-     * @covers \MensBeam\Catcher\Error::__construct
-     * @covers \MensBeam\Catcher\Handler::__construct
-     * @covers \MensBeam\Catcher\Handler::buildOutputArray
-     * @covers \MensBeam\Catcher\Handler::dispatch
-     * @covers \MensBeam\Catcher\Handler::handle
-     * @covers \MensBeam\Catcher\PlainTextHandler::dispatchCallback
-     * @covers \MensBeam\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Catcher\ThrowableController::getErrorType
-     * @covers \MensBeam\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Catcher\ThrowableController::getThrowable
-     */
-    public function testMethod_handleError(): void {
-        $c = new Catcher(new PlainTextHandler([ 'silent' => true ]));
-        $c->preventExit = true;
-        $c->throwErrors = false;
-
-        trigger_error('Ook!', \E_USER_NOTICE);
-        $t = $c->getLastThrowable();
-        $this->assertSame(Error::class, $t::class);
-        $this->assertSame(\E_USER_NOTICE, $t->getCode());
-
-        trigger_error('Ook!', \E_USER_DEPRECATED);
-        $t = $c->getLastThrowable();
-        $this->assertSame(Error::class, $t::class);
-        $this->assertSame(\E_USER_DEPRECATED, $t->getCode());
-
-        trigger_error('Ook!', \E_USER_WARNING);
-        $t = $c->getLastThrowable();
-        $this->assertSame(Error::class, $t::class);
-        $this->assertSame(\E_USER_WARNING, $t->getCode());
-
-        trigger_error('Ook!', \E_USER_ERROR);
-        $t = $c->getLastThrowable();
-        $this->assertSame(Error::class, $t::class);
-        $this->assertSame(\E_USER_ERROR, $t->getCode());
-
-        $er = error_reporting();
-        error_reporting(0);
-        trigger_error('Ook!', \E_USER_ERROR);
-        error_reporting($er);
-
-        $c->unregister();
-
-        $h1 = Phony::partialMock(PlainTextHandler::class, [ [ 'silent' => true ] ]);
-        $h2 = Phony::partialMock(HTMLHandler::class, [ [ 'silent' => true ] ]);
-        $h3 = Phony::partialMock(JSONHandler::class, [ [ 'silent' => true ] ]);
-
-        $h = Phony::partialMock(Catcher::class, [ 
-            $h1->get(),
-            $h2->get(),
-            $h3->get()
-        ]);
-        $c = $h->get();
-        $c->preventExit = true;
-        $c->throwErrors = false;
-
-        trigger_error('Ook!', \E_USER_ERROR);
-
-        $h1->dispatch->called();
-        $h2->dispatch->called();
-        $h3->dispatch->called();
-
-        $c->throwErrors = true;
+    public function testWeirdErrorReporting(): void {
+        error_reporting(\E_ERROR);
+        $t = null;
         try {
             trigger_error('Ook!', \E_USER_WARNING);
-        } catch (\Throwable $t) {
-            $this->assertInstanceOf(Error::class, $t);
-            $this->assertSame(\E_USER_WARNING, $t->getCode());
+        } catch (\Throwable $t) {} finally {
+            $this->assertNull($t);
+            $this->assertNull($this->catcher->getLastThrowable());
         }
-
-        try {
-            trigger_error('Ook!', \E_USER_ERROR);
-        } catch (\Throwable $t) {
-            $this->assertInstanceOf(Error::class, $t);
-            $this->assertSame(\E_USER_ERROR, $t->getCode());
-        }
-        
-        $c->unregister();
-        $c->throwErrors = false;
     }
 
-    /**
-     * @covers \MensBeam\Catcher::handleThrowable
-     * 
-     * @covers \MensBeam\Catcher::__construct
-     * @covers \MensBeam\Catcher::getLastThrowable
-     * @covers \MensBeam\Catcher::handleError
-     * @covers \MensBeam\Catcher::isErrorFatal
-     * @covers \MensBeam\Catcher::pushHandler
-     * @covers \MensBeam\Catcher::register
-     * @covers \MensBeam\Catcher::unregister
-     * @covers \MensBeam\Catcher\Error::__construct
-     * @covers \MensBeam\Catcher\Handler::__construct
-     * @covers \MensBeam\Catcher\Handler::buildOutputArray
-     * @covers \MensBeam\Catcher\Handler::dispatch
-     * @covers \MensBeam\Catcher\Handler::handle
-     * @covers \MensBeam\Catcher\PlainTextHandler::dispatchCallback
-     * @covers \MensBeam\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Catcher\ThrowableController::getThrowable
-     */
-    public function testMethod_handleThrowable(): void {
-        $c = new Catcher(new PlainTextHandler([ 'silent' => true, 'forceBreak' => true ]));
-        $c->preventExit = true;
-        $c->throwErrors = false;
-        trigger_error('Ook!', \E_USER_ERROR);
-        $t = $c->getLastThrowable();
-        $this->assertSame(Error::class, $t::class);
-        $this->assertSame(\E_USER_ERROR, $t->getCode());
-        $c->unregister();
 
-        $h = Phony::partialMock(Catcher::class, [ new PlainTextHandler([ 'silent' => true ]) ]);
-        $h->exit->returns();
-        $c = $h->get();
-        $c->preventExit = false;
-        $c->throwErrors = false;
-
-        trigger_error('Ook!', \E_USER_ERROR);
-        $t = $c->getLastThrowable();
-        $this->assertSame(Error::class, $t::class);
-        $this->assertSame(\E_USER_ERROR, $t->getCode());
-        $c->unregister();
+    /** @dataProvider provideFatalErrorTests */
+    public function testFatalErrors(string $throwableClassName, \Closure $closure): void {
+        $this->expectException($throwableClassName);
+        $closure($this->catcher);
     }
 
-    /**
-     * @covers \MensBeam\Catcher::handleShutdown
-     * 
-     * @covers \MensBeam\Catcher::__construct
-     * @covers \MensBeam\Catcher::getLastError
-     * @covers \MensBeam\Catcher::handleError
-     * @covers \MensBeam\Catcher::isErrorFatal
-     * @covers \MensBeam\Catcher::handleThrowable
-     * @covers \MensBeam\Catcher::pushHandler
-     * @covers \MensBeam\Catcher::register
-     * @covers \MensBeam\Catcher::unregister
-     * @covers \MensBeam\Catcher\Error::__construct
-     * @covers \MensBeam\Catcher\Handler::__construct
-     * @covers \MensBeam\Catcher\Handler::buildOutputArray
-     * @covers \MensBeam\Catcher\Handler::dispatch
-     * @covers \MensBeam\Catcher\Handler::handle
-     * @covers \MensBeam\Catcher\PlainTextHandler::dispatchCallback
-     * @covers \MensBeam\Catcher\PlainTextHandler::handleCallback
-     * @covers \MensBeam\Catcher\ThrowableController::__construct
-     * @covers \MensBeam\Catcher\ThrowableController::getPrevious
-     * @covers \MensBeam\Catcher\ThrowableController::getThrowable
-     */
-    public function testMethod_handleShutdown(): void {
-        $c = new Catcher();
-        $c->preventExit = true;
-        $c->throwErrors = false;
-        $c->handleShutdown();
-        $p = new \ReflectionProperty($c, 'isShuttingDown');
-        $p->setAccessible(true);
-        $this->assertTrue($p->getValue($c));
-        $c->unregister();
 
-        $c = new Catcher();
-        $c->preventExit = true;
-        $c->throwErrors = false;
-        $c->unregister();
-        $c->handleShutdown();
-        $p = new \ReflectionProperty($c, 'isShuttingDown');
-        $p->setAccessible(true);
-        $this->assertFalse($p->getValue($c));
-        $c->unregister();
+    public static function provideFatalErrorTests(): iterable {
+        $iterable = [
+            [
+                UnderflowException::class,
+                function (Catcher $c): void {
+                    $c->popHandler();
+                }
+            ],
+            [
+                ArgumentCountError::class,
+                function (Catcher $c): void {
+                    $c->pushHandler();
+                }
+            ],
+            [
+                UnderflowException::class,
+                function (Catcher $c): void {
+                    $c->shiftHandler();
+                }
+            ],
+            [
+                ArgumentCountError::class,
+                function (Catcher $c): void {
+                    $c->unshiftHandler();
+                }
+            ],
+        ];
 
-        $h = Phony::partialMock(Catcher::class, [ new PlainTextHandler([ 'silent' => true ]) ]);
-        $h->getLastError->returns([
-            'type' => \E_ERROR,
-            'message' => 'Ook!',
-            'file' => '/dev/null',
-            'line' => 2112
-        ]);
-        $c = $h->get();
-        $c->handleShutdown();
-        $h->handleError->called();
-        $h->handleThrowable->called();
+        foreach ($iterable as $i) {
+            yield $i;
+        }
+    }
+
+    public static function provideErrorHandlingTests(): iterable {
+        foreach ([ \E_USER_NOTICE, \E_USER_DEPRECATED, \E_USER_WARNING, \E_USER_ERROR ] as $i) {
+            yield [ $i ];
+        }
+    }
+
+    public static function provideShutdownTests(): iterable {
+        $iterable = [
+            [
+                function (IMock $m, IMock $h): void {
+                    $m->errorHandlingMethod = Catcher::THROW_NO_ERRORS;
+                    Phake::when($m)->getLastError()->thenReturn([
+                        'type' => \E_ERROR,
+                        'message' => 'Ook!',
+                        'file' => '/dev/null',
+                        'line' => 2112
+                    ]);
+                    $m->handleShutdown();
+                    Phake::verify($m)->getLastError();
+                    Phake::verify($m)->handleError(\E_ERROR, 'Ook!', '/dev/null', 2112);
+                    Phake::verify($h, Phake::times(1))->invokeCallback();
+                }
+            ],
+            [
+                function (IMock $m, IMock $h): void {
+                    $m->errorHandlingMethod = Catcher::THROW_NO_ERRORS;
+                    Phake::when($m)->getLastError()->thenReturn([
+                        'type' => \E_USER_ERROR,
+                        'message' => 'Ook!',
+                        'file' => '/dev/null',
+                        'line' => 2112
+                    ]);
+                    $m->handleShutdown();
+                    Phake::verify($m)->getLastError();
+                    Phake::verify($m)->handleError(\E_USER_ERROR, 'Ook!', '/dev/null', 2112);
+                    Phake::verify($h, Phake::times(1))->invokeCallback();
+                }
+            ],
+            [
+                function (IMock $m, IMock $h): void {
+                    $m->errorHandlingMethod = Catcher::THROW_NO_ERRORS;
+                    Phake::when($m)->getLastError()->thenReturn([
+                        'type' => \E_USER_ERROR,
+                        'message' => 'Ook!',
+                        'file' => '/dev/null',
+                        'line' => 2112
+                    ]);
+                    $m->handleShutdown();
+                    Phake::verify($m)->getLastError();
+                    Phake::verify($m)->handleError(\E_USER_ERROR, 'Ook!', '/dev/null', 2112);
+                    Phake::verify($h, Phake::times(1))->invokeCallback();
+                }
+            ],
+            [
+                function (IMock $m, IMock $h): void {
+                    $m->errorHandlingMethod = Catcher::THROW_NO_ERRORS;
+                    $m->handleShutdown();
+                    Phake::verify($m)->getLastError();
+                    // Handler wouldn't be invoked because there aren't any errors in the output buffer.
+                    Phake::verify($h, Phake::never())->invokeCallback();
+                }
+            ],
+            [
+                function (IMock $m, IMock $h): void {
+                    // Nothing in the shutdown handler runs if Catcher is unregistered
+                    $m->unregister();
+                    $m->handleShutdown();
+                    Phake::verify($m, Phake::never())->getLastError();
+                    Phake::verify($h, Phake::never())->invokeCallback();
+                }
+            ]
+        ];
+
+        foreach ($iterable as $i) {
+            yield $i;
+        }
     }
 }

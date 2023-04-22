@@ -7,21 +7,18 @@
 
 declare(strict_types=1);
 namespace MensBeam\Catcher;
+use Psr\Log\LoggerInterface;
 
 
 abstract class Handler {
     public const CONTENT_TYPE = null;
 
     // Control constants
-    public const CONTINUE = 1;
-    public const BREAK = 2;
-    public const EXIT = 4;
-
-    // Output constants
-    public const OUTPUT = 8;
-    public const SILENT = 16;
-    public const NOW = 32;
-
+    public const BUBBLES = 1;
+    public const EXIT = 2;
+    public const LOG = 4;
+    public const NOW = 8;
+    public const OUTPUT = 16;
 
     /**
      * Array of HandlerOutputs the handler creates
@@ -32,22 +29,23 @@ abstract class Handler {
 
     /** The number of backtrace frames in which to print arguments; defaults to 5 */
     protected int $_backtraceArgFrameLimit = 5;
+    /** If true the handler will move onto the next item in the stack of handlers */
+    protected bool $_bubbles = true;
     /**
      * The character encoding used for errors; only used if headers weren't sent before
      * an error occurred
      */
     protected string $_charset = 'UTF-8';
-    /** If true the handler will force break the loop through the stack of handlers */
-    protected bool $_forceBreak = false;
     /** If true the handler will force an exit */
     protected bool $_forceExit = false;
-    /**
-     * If true the handler will output as soon as possible; however, if silent
-     * is true the handler will output nothing
-     */
+    /** If true the handler will output as soon as possible, unless silenced */
     protected bool $_forceOutputNow = false;
     /** The HTTP code to be sent; possible values: 200, 400-599 */
     protected int $_httpCode = 500;
+    /** The PSR-3 compatible logger in which to log to; defaults to null (no logging) */
+    protected ?LoggerInterface $_logger = null;
+    /** Still send logs when silent */
+    protected bool $_logWhenSilent = true;
     /** If true the handler will output backtraces; defaults to false */
     protected bool $_outputBacktrace = false;
     /** If true the handler will output previous throwables; defaults to true */
@@ -88,14 +86,14 @@ abstract class Handler {
 
 
 
-    public function dispatch(): void {
+    public function __invoke(): void {
         if (count($this->outputBuffer) === 0) {
             return;
         }
 
         // Send the headers if possible and necessary
         if (isset($_SERVER['REQUEST_URI'])) {
-            // Can't figure out a way to test coverage here, but the logic is tested thoroughly 
+            // Can't figure out a way to test coverage here, but the logic is tested thoroughly
             // when running tests in HTTP
             // @codeCoverageIgnoreStart
             if (!headers_sent()) {
@@ -106,7 +104,7 @@ abstract class Handler {
             // @codeCoverageIgnoreEnd
         }
 
-        $this->dispatchCallback();
+        $this->invokeCallback();
         $this->outputBuffer = [];
     }
 
@@ -131,23 +129,23 @@ abstract class Handler {
             $output['time'] = new \DateTimeImmutable();
         }
 
-        $code = self::CONTINUE;
-        if ($this->_forceBreak) {
-            $code = self::BREAK;
+        $code = 0;
+        if ($this->_bubbles) {
+            $code = self::BUBBLES;
         }
         if ($this->_forceExit) {
             $code |= self::EXIT;
         }
-        $output['controlCode'] = $code;
-
-        $code = self::OUTPUT;
-        if ($this->_silent) {
-            $code = self::SILENT;
+        if ($this->_logger !== null && (!$this->_silent || ($this->_silent && $this->_logWhenSilent))) {
+            $code |= self::LOG;
         }
         if ($this->_forceOutputNow) {
             $code |= self::NOW;
         }
-        $output['outputCode'] = $code;
+        if (!$this->_silent) {
+            $code |= self::OUTPUT;
+        }
+        $output['code'] = $code;
 
         $output = $this->handleCallback($output);
         $this->outputBuffer[] = $output;
@@ -158,6 +156,7 @@ abstract class Handler {
         $class = get_class($this);
         if (!property_exists($class, "_$name")) {
             trigger_error(sprintf('Undefined option in %s: %s', $class, $name), \E_USER_WARNING);
+            return;
         }
 
         $name = "_$name";
@@ -206,10 +205,43 @@ abstract class Handler {
         return $outputThrowable;
     }
 
-    abstract protected function dispatchCallback(): void;
-
     protected function handleCallback(array $output): array {
         return $output;
+    }
+
+    abstract protected function invokeCallback(): void;
+
+    protected function log(\Throwable $throwable, string $message): void {
+        $context = [ 'exception' => $throwable ];
+        if ($throwable instanceof \Error) {
+            switch ($throwable->getCode()) {
+                case \E_NOTICE:
+                case \E_USER_NOTICE:
+                case \E_STRICT:
+                    $this->_logger->notice($message, $context);
+                break;
+                case \E_WARNING:
+                case \E_COMPILE_WARNING:
+                case \E_USER_WARNING:
+                case \E_DEPRECATED:
+                case \E_USER_DEPRECATED:
+                    $this->_logger->warning($message, $context);
+                break;
+                case \E_RECOVERABLE_ERROR:
+                    $this->_logger->error($message, $context);
+                break;
+                case \E_PARSE:
+                case \E_CORE_ERROR:
+                case \E_COMPILE_ERROR:
+                    $this->_logger->alert($message, $context);
+                break;
+                default: $this->_logger->critical($message, $context);
+            }
+        } elseif ($throwable instanceof \Exception && ($throwable instanceof \PharException || $throwable instanceof \RuntimeException)) {
+            $this->_logger->alert($message, $context);
+        } else {
+            $this->_logger->critical($message, $context);
+        }
     }
 
     protected function print(string $string): void {

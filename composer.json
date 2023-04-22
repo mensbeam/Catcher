@@ -8,6 +8,11 @@
             "MensBeam\\": "lib/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "MensBeam\\Catcher\\Test\\": "tests/lib/"
+        }
+    },
     "authors": [
         {
             "name": "Dustin Wilson",
@@ -18,15 +23,8 @@
         "php": ">=8.1",
         "psr/log": "^3.0"
     },
-    "suggest": {
-        "ext-dom": "For HTMLHandler",
-        "ext-pcntl": "For allowing catching of notices, warnings, etc."
-    },
     "require-dev": {
-        "ext-dom": "*",
-        "mensbeam/html-dom": ">=1.0",
-        "phpunit/phpunit": ">=9.5",
-        "nikic/php-parser": ">=4.15",
-        "eloquent/phony-phpunit": ">=7.1"
+        "phpunit/phpunit": "^10",
+        "phake/phake": "^4.4"
     }
 }

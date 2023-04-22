@@ -7,75 +7,31 @@
 
 declare(strict_types=1);
 namespace MensBeam\Catcher;
-use Psr\Log\LoggerInterface;
 
 
 class PlainTextHandler extends Handler {
     public const CONTENT_TYPE = 'text/plain';
 
-    /** The PSR-3 compatible logger in which to log to; defaults to null (no logging) */
-    protected ?LoggerInterface $_logger = null;
     /** The PHP-standard date format which to use for timestamps in output */
     protected string $_timeFormat = '[H:i:s]';
 
 
-
-    protected function dispatchCallback(): void {
-        if ($this->_logger) {
-            foreach ($this->outputBuffer as $o) {
-                $output = $this->serializeOutputThrowable($o);
-                if ($o['outputCode'] & self::SILENT) {
-                    continue;
-                }
-
-                $this->print($output);
-            }
-        } else {
-            foreach ($this->outputBuffer as $o) {
-                if ($o['outputCode'] & self::SILENT) {
-                    continue;
-                }
-
-                $this->print($this->serializeOutputThrowable($o));
-            }
-        }
-    }
-
     protected function handleCallback(array $output): array {
-        $output['outputCode'] = (\PHP_SAPI === 'cli') ? $output['outputCode'] | self::NOW : $output['outputCode'];
+        $output['code'] = (\PHP_SAPI === 'cli') ? $output['code'] | self::NOW : $output['code'];
         return $output;
     }
 
-    protected function log(\Throwable $throwable, string $message): void {
-        $context = [ 'exception' => $throwable ];
-        if ($throwable instanceof \Error) {
-            switch ($throwable->getCode()) {
-                case \E_NOTICE:
-                case \E_USER_NOTICE:
-                case \E_STRICT:
-                    $this->_logger->notice($message, $context);
-                break;
-                case \E_WARNING:
-                case \E_COMPILE_WARNING:
-                case \E_USER_WARNING:
-                case \E_DEPRECATED:
-                case \E_USER_DEPRECATED:
-                    $this->_logger->warning($message, $context);
-                break;
-                case \E_RECOVERABLE_ERROR:
-                    $this->_logger->error($message, $context);
-                break;
-                case \E_PARSE:
-                case \E_CORE_ERROR:
-                case \E_COMPILE_ERROR:
-                    $this->_logger->alert($message, $context);
-                break;
-                default: $this->_logger->critical($message, $context);
+    protected function invokeCallback(): void {
+        foreach ($this->outputBuffer as $o) {
+            if (($o['code'] & self::OUTPUT) === 0) {
+                if ($o['code'] & self::LOG) {
+                    $this->serializeOutputThrowable($o);
+                }
+
+                continue;
             }
-        } elseif ($throwable instanceof \Exception && ($throwable instanceof \PharException || $throwable instanceof \RuntimeException)) {
-            $this->_logger->alert($message, $context);
-        } else {
-            $this->_logger->critical($message, $context);
+
+            $this->print($this->serializeOutputThrowable($o));
         }
     }
 
@@ -136,7 +92,7 @@ class PlainTextHandler extends Handler {
                 $output = rtrim($output) . \PHP_EOL;
             }
 
-            if (!empty($this->_logger)) {
+            if ($outputThrowable['code'] & self::LOG) {
                 $this->log($outputThrowable['controller']->getThrowable(), $output);
             }
 

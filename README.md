@@ -4,6 +4,7 @@
 [d]: https://www.php.net/manual/en/function.pcntl-fork.php
 [e]: https://www.php.net/manual/en/function.print-r.php
 [f]: https://github.com/symfony/var-exporter
+[g]: https://github.com/php-fig/log
 
 # Catcher #
 
@@ -11,20 +12,20 @@ Catcher is a Throwable catcher and error handling library for PHP. Error handlin
 
 Catcher uses classes called _handlers_ to handle throwables sent its way. PHP is currently in a state of flux when it comes to errors. There are traditional PHP errors which are triggered in userland by using `trigger_error()` which can't be caught using `try`/`catch` and are generally a pain to work with. PHP has begun to remedy this problem by introducing the `\Error` class and its various child classes. However, a lot of functions and core aspects of the language itself continue to use legacy errors. This class does away with this pain point in PHP by turning all errors into throwables. When Catcher converts legacy errors into throwables it will only exit if PHP would, so warnings, notices, etc. won't cause the program to exit unless you configure it to do so. Non user-level fatal errors are picked up by Catcher using its shutdown handler. This means that simply by invoking Catcher one may now... catch (almost) any error PHP then handles.
 
-  
+
 ## Requirements ##
 
-* PHP 8.1 or newer with the following _optional_ extensions:
-    * [dom][a] extension (for HTMLHandler)
+* PHP >= 8.1
+* [psr/log][g] ^3.0
 
-  
+
 ## Installation ##
 
 ```shell
 composer require mensbeam/catcher
 ```
 
-  
+
 ## Usage ##
 
 For most use cases this library requires no configuration and little effort to integrate into non-complex environments:
@@ -88,7 +89,7 @@ This is accomplished internally because of [`pcntl_fork`][d]. The throw is done 
 PHP by default won't allow fatal errors to be handled by error handlers. It will instead print the error and exit. However, before code execution halts any shutdown functions are run. Catcher will retrieve the last error and manually process it. This causes multiple instances of the same error to be output. Because of this Catcher alters the error reporting level by always removing `E_ERROR` from it when registering the handlers. `E_ERROR` is bitwise or'd back to the error reporting level when unregistering. If this behavior is undesirable then `E_ERROR` can be manually included back into error reporting at any time after Catcher instantiates. Keep in mind Catcher _will not_ include `E_ERROR` back into the error reporting level bitmask if the error reporting level was modified after Catcher was instantiated or if the error reporting level didn't have it when Catcher registered its handlers.
 
 ## Documentation ##
-  
+
 ### MensBeam\Catcher ###
 
 This is the main class in the library. Unless you have a need to configure a handler or use multiple handlers there usually isn't a need to interact with the rest of the library at all.
@@ -163,7 +164,7 @@ Unregisters the Catcher instance as an error, exception and shutdown handler.
 
 Unshifts the specified handler(s) onto the beginning of the stack
 
-  
+
 ### MensBeam\Catcher\Handler ###
 
 All handlers inherit from this abstract class. Since it is an abstract class meant for constructing handlers protected methods and properties will be documented here as well.
@@ -457,7 +458,7 @@ throw new \Exception('Ook!');
 Output:
 ```
 [21:12:00]  Exception: Ook! in file /home/mensbeam/super-awesome-project/ook.php on line 13
-            
+
             Stack trace:
             1. Exception  /home/mensbeam/super-awesome-project/ook.php:13
              | [

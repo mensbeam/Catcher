@@ -72,6 +72,6 @@ $RECYCLE.BIN/
 /vendor/
 /vendor-bin/*/vendor
 /tests/html5lib-tests
-/tests/.phpunit.result.cache
+/tests/.phpunit.cache
 /tests/coverage
 cachegrind.out.*
