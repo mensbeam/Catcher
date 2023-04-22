@@ -31,7 +31,7 @@ class Catcher {
      * Stores the error reporting level set by Catcher to compare against when
      * unregistering
      */
-    public ?int $errorReporting = null;
+    protected ?int $errorReporting = null;
     /**
      * Array of handlers the exceptions are passed to
      *
