@@ -36,7 +36,7 @@ abstract class Handler {
      * an error occurred
      */
     protected string $_charset = 'UTF-8';
-    /** If true the handler will force an exit */
+    /** If true the handler will force an exit after all handlers have run */
     protected bool $_forceExit = false;
     /** If true the handler will output as soon as possible, unless silenced */
     protected bool $_forceOutputNow = false;
@@ -70,12 +70,7 @@ abstract class Handler {
 
     public function __construct(array $options = []) {
         foreach ($options as $key => $value) {
-            $key = "_$key";
-            if ($key === '_httpCode' && is_int($value) && $value !== 200 && max(400, min($value, 600)) !== $value) {
-                throw new \RangeException('Option "httpCode" can only be an integer of 200 or 400-599');
-            }
-
-            $this->$key = $value;
+            $this->setOption($key, $value);
         }
 
         if ($this->_varExporter === null) {
@@ -93,8 +88,7 @@ abstract class Handler {
 
         // Send the headers if possible and necessary
         if (isset($_SERVER['REQUEST_URI'])) {
-            // Can't figure out a way to test coverage here, but the logic is tested thoroughly
-            // when running tests in HTTP
+            // Can't figure out a way to test coverage here
             // @codeCoverageIgnoreStart
             if (!headers_sent()) {
                 header_remove('location');
@@ -159,6 +153,22 @@ abstract class Handler {
             return;
         }
 
+        if (
+            $name === 'httpCode' &&
+            is_int($value) &&
+            $value !== 200 &&
+            max(400, min($value, 418)) !== $value &&
+            max(421, min($value, 429)) !== $value &&
+            $value !== 431 &&
+            $value !== 451 &&
+            max(500, min($value, 511)) !== $value &&
+            // Cloudflare extensions
+            max(520, min($value, 527)) !== $value &&
+            $value !== 530
+        ) {
+            throw new RangeException('Option "httpCode" can only be a valid HTTP 200, 4XX, or 5XX code');
+        }
+
         $name = "_$name";
         $this->$name = $value;
     }
@@ -192,8 +202,7 @@ abstract class Handler {
 
     protected function cleanOutputThrowable(array $outputThrowable): array {
         unset($outputThrowable['controller']);
-        unset($outputThrowable['controlCode']);
-        unset($outputThrowable['outputCode']);
+        unset($outputThrowable['code']);
 
         if (isset($outputThrowable['previous'])) {
             $outputThrowable['previous'] = $this->cleanOutputThrowable($outputThrowable['previous']);
@@ -205,10 +214,8 @@ abstract class Handler {
         return $outputThrowable;
     }
 
-    protected function handleCallback(array $output): array {
-        return $output;
-    }
 
+    abstract protected function handleCallback(array $output): array;
     abstract protected function invokeCallback(): void;
 
     protected function log(\Throwable $throwable, string $message): void {
@@ -227,17 +234,14 @@ abstract class Handler {
                 case \E_USER_DEPRECATED:
                     $this->_logger->warning($message, $context);
                 break;
-                case \E_RECOVERABLE_ERROR:
-                    $this->_logger->error($message, $context);
-                break;
                 case \E_PARSE:
                 case \E_CORE_ERROR:
                 case \E_COMPILE_ERROR:
-                    $this->_logger->alert($message, $context);
+                    $this->_logger->critical($message, $context);
                 break;
-                default: $this->_logger->critical($message, $context);
+                default: $this->_logger->error($message, $context);
             }
-        } elseif ($throwable instanceof \Exception && ($throwable instanceof \PharException || $throwable instanceof \RuntimeException)) {
+        } elseif ($throwable instanceof \PharException || $throwable instanceof \RuntimeException) {
             $this->_logger->alert($message, $context);
         } else {
             $this->_logger->critical($message, $context);
@@ -245,12 +249,12 @@ abstract class Handler {
     }
 
     protected function print(string $string): void {
-        $string = "$string\n";
         if (strtolower(\PHP_SAPI) === 'cli' && $this->_outputToStderr) {
             // Can't test this in code coverage without printing errors to STDERR
             fwrite(\STDERR, $string); // @codeCoverageIgnore
-        } else {
-            echo $string;
+            return; // @codeCoverageIgnore
         }
+
+        echo $string;
     }
 }

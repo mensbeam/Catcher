@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace MensBeam\Logger\Test;
+namespace MensBeam\Catcher\Test;
 
 ini_set('memory_limit', '2G');
 ini_set('zend.assertions', '1');

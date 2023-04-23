@@ -11,7 +11,11 @@ use MensBeam\Catcher\Handler;
 
 
 class TestingHandler extends Handler {
+    public array $output = [];
+
     protected ?string $_name = null;
+    // Could just use silent option instead, but we need to test Handler::SILENT
+    protected bool $_print = false;
 
 
     protected function handleCallback(array $output): array {
@@ -35,7 +39,13 @@ class TestingHandler extends Handler {
                 ]));
             }
 
-            //$this->print($this->serializeOutputThrowable($o));
+            $o = $this->cleanOutputThrowable($o);
+
+            if ($this->_print) {
+                $this->print(json_encode($o, \JSON_THROW_ON_ERROR));
+            }
+
+            $this->output[] = $o;
         }
     }
 }

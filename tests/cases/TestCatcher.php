@@ -49,7 +49,10 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         $this->assertInstanceOf(PlainTextHandler::class, $h[0]);
     }
 
-    /** @dataProvider provideErrorHandlingTests */
+    /**
+     * @dataProvider provideErrorHandlingTests
+     * @covers \MensBeam\Catcher\Error
+     */
     public function testErrorHandling(int $code): void {
         $t = null;
         try {
@@ -62,19 +65,21 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         }
     }
 
+    /** @covers \MensBeam\Catcher\Error */
     public function testExit(): void {
         $this->catcher->unregister();
         $h = Phake::partialMock(TestingHandler::class);
         $this->catcher = $m = Phake::partialMock(Catcher::class, $h);
         $m->errorHandlingMethod = Catcher::THROW_NO_ERRORS;
         Phake::when($m)->exit->thenReturn(null);
-        Phake::when($m)->handleShutdown()->thenReturn(null);
+        Phake::when($m)->handleShutdown->thenReturn(null);
 
         trigger_error('Ook!', \E_USER_ERROR);
 
         Phake::verify($h, Phake::times(1))->invokeCallback();
     }
 
+    /** @covers \MensBeam\Catcher\Error */
     public function testHandlerBubbling(): void {
         $this->catcher->unregister();
 
@@ -91,6 +96,7 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         Phake::verify($h2, Phake::never())->invokeCallback();
     }
 
+    /** @covers \MensBeam\Catcher\Error */
     public function testHandlerForceExiting(): void {
         $this->catcher->setHandlers(new TestingHandler([ 'forceExit' => true ]));
         $this->catcher->errorHandlingMethod = Catcher::THROW_NO_ERRORS;
@@ -108,7 +114,10 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         $this->assertFalse($this->catcher->isRegistered());
     }
 
-    /** @dataProvider provideShutdownTests */
+    /**
+     * @dataProvider provideShutdownTests
+     * @covers \MensBeam\Catcher\Error
+     */
     public function testShutdownHandling(\Closure $closure): void {
         $this->catcher->unregister();
 
@@ -148,6 +157,7 @@ class TestCatcher extends \PHPUnit\Framework\TestCase {
         $this->assertEquals(1, count($c->getHandlers()));
     }
 
+    /** @covers \MensBeam\Catcher\Error */
     public function testWeirdErrorReporting(): void {
         error_reporting(\E_ERROR);
         $t = null;
