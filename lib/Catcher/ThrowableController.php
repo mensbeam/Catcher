@@ -93,7 +93,7 @@ class ThrowableController {
             return $this->frames;
         }
         if ($argFrameLimit < 0) {
-            throw new \RangeException('Argument argFrameLimit cannot be less than 0');
+            throw new UnderflowException('Argument argFrameLimit cannot be less than 0');
         }
 
         if (
