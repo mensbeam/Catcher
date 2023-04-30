@@ -38,7 +38,7 @@ class PlainTextHandler extends Handler {
     protected function serializeOutputThrowable(array $outputThrowable, bool $previous = false): string {
         $class = $outputThrowable['class'] ?? null;
         if ($class !== null && !empty($outputThrowable['errorType'])) {
-            $class = "{$outputThrowable['errorType']} ($class)";
+            $class = $outputThrowable['errorType'];
         }
 
         $output = sprintf(
@@ -69,7 +69,8 @@ class PlainTextHandler extends Handler {
                         } else {
                             $method = $frame['class'];
                             if (!empty($frame['function'])) {
-                                $method .= "::{$frame['function']}";
+                                $ref = new \ReflectionMethod($frame['class'], $frame['function']);
+                                $method .= (($ref->isStatic()) ? '::' : '->') . $frame['function'];
                             }
                         }
                     } elseif (!empty($frame['function'])) {
@@ -92,6 +93,7 @@ class PlainTextHandler extends Handler {
                 $output = rtrim($output) . \PHP_EOL;
             }
 
+            // The log message shouldn't have the timestamp added to it.
             if ($outputThrowable['code'] & self::LOG) {
                 $this->log($outputThrowable['controller']->getThrowable(), $output);
             }
