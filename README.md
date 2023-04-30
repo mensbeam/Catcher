@@ -109,6 +109,14 @@ class Catcher {
 }
 ```
 
+#### Constants ####
+
+_THROW\_NO\_ERRORS_: When used in _errorHandlingMethod_ will cause Catcher to not throw any errors.  
+_THROW\_FATAL\_ERRORS_: When used in _errorHandlingMethod_ will cause Catcher throw only fatal errors; this is the default behavior.  
+_THROW\_ALL\_ERRORS_: When used in _errorHandlingMethod_ will cause Catcher to throw all errors.  
+_NOW_: When returned within the output bitmask, it causes Catcher to have the handler immediately be invoked.  
+_OUTPUT_: When returned within the output bitkask, it causes the handler to output the throwable when invoked.
+
 #### Properties ####
 
 _errorHandlingMethod_: Determines how errors are handled; THROW_* constants exist to control  
