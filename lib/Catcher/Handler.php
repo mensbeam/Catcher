@@ -44,7 +44,7 @@ abstract class Handler {
     protected int $_httpCode = 500;
     /** The PSR-3 compatible logger in which to log to; defaults to null (no logging) */
     protected ?LoggerInterface $_logger = null;
-    /** Still send logs when silent */
+    /** When set to true the handler will still send logs when silent */
     protected bool $_logWhenSilent = true;
     /** If true the handler will output backtraces; defaults to false */
     protected bool $_outputBacktrace = false;

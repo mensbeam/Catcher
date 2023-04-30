@@ -22,10 +22,10 @@ class Catcher {
     public const THROW_FATAL_ERRORS = 1;
     public const THROW_ALL_ERRORS = 2;
 
-    /** When set to true Catcher won't exit when instructed */
-    public bool $preventExit = false;
     /** Determines how errors are handled; THROW_* constants exist to control */
     public int $errorHandlingMethod = self::THROW_FATAL_ERRORS;
+    /** When set to true Catcher won't exit when instructed */
+    public bool $preventExit = false;
 
     /**
      * Stores the error reporting level set by Catcher to compare against when

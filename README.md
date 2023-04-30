@@ -1,5 +1,5 @@
 [a]: https://php.net/manual/en/book.dom.php
-[b]: https://github.com/Seldaek/monolog
+[b]: https://code.mensbeam.com/MensBeam/Logger
 [c]: https://github.com/symfony/yaml
 [d]: https://www.php.net/manual/en/function.pcntl-fork.php
 [e]: https://www.php.net/manual/en/function.print-r.php
@@ -8,9 +8,9 @@
 
 # Catcher #
 
-Catcher is a Throwable catcher and error handling library for PHP. Error handling is accomplished using a stack-based approach.
+_Catcher_ is a Throwable catcher and error handling library for PHP. Error handling is accomplished using a stack-based approach.
 
-Catcher uses classes called _handlers_ to handle throwables sent its way. PHP is currently in a state of flux when it comes to errors. There are traditional PHP errors which are triggered in userland by using `trigger_error()` which can't be caught using `try`/`catch` and are generally a pain to work with. PHP has begun to remedy this problem by introducing the `\Error` class and its various child classes. However, a lot of functions and core aspects of the language itself continue to use legacy errors. This class does away with this pain point in PHP by turning all errors into throwables. When Catcher converts legacy errors into throwables it will only exit if PHP would, so warnings, notices, etc. won't cause the program to exit unless you configure it to do so. Non user-level fatal errors are picked up by Catcher using its shutdown handler. This means that simply by invoking Catcher one may now... catch (almost) any error PHP then handles.
+_Catcher_ uses classes called _handlers_ to handle throwables sent its way. PHP is currently in a state of flux when it comes to errors. There are traditional PHP errors which are triggered in userland by using `trigger_error()` which can't be caught using `try`/`catch` and are generally a pain to work with. PHP has begun to remedy this problem by introducing the `\Error` class and its various child classes. However, a lot of functions and core aspects of the language itself continue to use legacy errors. This class attempts to make that pain point much easier by throwing fatal errors as `\Error`s. It is possible to configure _Catcher_ on the fly to throw non fatal errors, allowing you to easily catch them as you would exceptions.
 
 
 ## Requirements ##
@@ -36,39 +36,29 @@ use MensBeam\Catcher;
 $catcher = new Catcher();
 ```
 
-That's it. It will automatically register Catcher as an exception, error, and shutdown handler and use `PlainTextHandler` as its sole handler. Catcher can be configured to use one or multiple _handlers_. Imagine a situation where it is necessary to both output text for logging and JSON for an API endpoint. This is easily done using Catcher:
+That's it. It will automatically register Catcher as an exception, error, and shutdown handler and use `PlainTextHandler` as its sole handler. _Catcher_ is fully configurable and can be configured to use one or multiple _handlers_. At present there is only one handler, the aforementioned `PlainTextHandler`. All handlers may be configured to log errors like so:
 
 ```php
 use MensBeam\Catcher,
-    Monolog\Logger;
-use MensBeam\Catcher\{
-    JSONHandler,
-    PlainTextHandler
-};
+    MensBeam\Logger;
 
 $catcher = new Catcher(
     new PlainTextHandler([
         'logger' => new Logger('log'),
         'silent' => true
-    ]),
-    new JSONHandler()
+    ])
 );
 ```
 
-The example above uses [Monolog][b] for its logger, but any PSR-3-compatible logger will work. The `PlainTextHandler` is configured to use a logger where then it will send any and all errors to the logger to do with as it pleases. It is also configured to be otherwise silent. `JSONHandler` is then configured using its default configuration. Handlers are placed within a stack and executed in the order by which they are fed to Catcher, so in this case `PlainTextHandler` will go first, logging the error. `JSONHandler` will follow afterwards and print the JSON.
-
-Catcher comes built-in with the following handlers:
-
-* `HTMLHandler` – Outputs errors in a clean HTML document; uses DOM to assemble the document.
-* `JSONHandler` – Outputs errors in a JSON format mostly representative of how errors are stored internally by Catcher handlers; it is provided as an example. The decision to make it like this was made because errors often need to be represented according to particular requirements or even a specification, and we cannot possibly support them all. `JSONHandler`, however, can be easily extended to suit individual project needs.
-* `PlainTextHandler` – Outputs errors cleanly in plain text meant mostly for command line use and also provides for logging
+The example above uses [Logger][b] for its logger, but any PSR-3-compatible logger will work.
 
 ### A Note About Notices, Warnings, etc. ###
 
-As described in the summary paragraph at the beginning of this document, Catcher by default converts all warnings, notices, etc. to `Throwable`s and then proceeds to throw them. Normally, when throwing that halts execution no matter what, but with Catcher that is not always the case.
+As described in the summary paragraph at the beginning of this document, Catcher by default converts all fatal errors to `Throwable`s and will leave warnings, notices, etc. alone. However, it can be configured to throw these too.
 
 ```php
 $catcher = new Catcher();
+$catcher->errorHandlingMethod = Catcher::THROW_ALL_ERRORS;
 
 try {
     trigger_error(\E_USER_WARNING, 'Ook!');
@@ -81,8 +71,6 @@ Output:
 ```
 Ook!
 ```
-
-This is accomplished internally because of [`pcntl_fork`][d]. The throw is done in a separate fork which causes that fork to exit after the `Throwable` is handled while the main process is allowed to continue. `pcntl_fork` is a POSIX function and therefore is only available for use in CLI UNIX environments; this means that it will work neither in Windows nor in Web environments. We also understand this might be undesirable behavior to many as it turns the concept of throwables on its metaphorical ear, so turning this off is as simple as setting `Catcher::$forking` to false.
 
 ### Error Handling ###
 
@@ -99,9 +87,12 @@ namespace MensBeam;
 use MensBeam\Catcher\Handler;
 
 class Catcher {
-    public bool $forking = true;
+    public const THROW_NO_ERRORS = 0;
+    public const THROW_FATAL_ERRORS = 1;
+    public const THROW_ALL_ERRORS = 2;
+
+    public int $errorHandlingMethod = self::THROW_FATAL_ERRORS;
     public bool $preventExit = false;
-    public bool $throwErrors = true;
 
     public function __construct(Handler ...$handlers);
 
@@ -120,9 +111,8 @@ class Catcher {
 
 #### Properties ####
 
-_forking_: When set to true Catcher will throw converted notices, warnings, etc. in a fork, allowing for execution to continue afterwards  
-_preventExit_: When set to true Catcher won't exit at all even after fatal errors or exceptions  
-_throwErrors_: When set to true Catcher will convert errors to throwables
+_errorHandlingMethod_: Determines how errors are handled; THROW_* constants exist to control  
+_preventExit_: When set to true Catcher won't exit at all even after fatal errors or exceptions
 
 #### MensBeam\Catcher::getHandlers ####
 
@@ -176,60 +166,55 @@ abstract class Handler {
     public const CONTENT_TYPE = null;
 
     // Control constants
-    public const CONTINUE = 1;
-    public const BREAK = 2;
-    public const EXIT = 4;
-
-    // Output constants
-    public const OUTPUT = 8;
-    public const SILENT = 16;
-    public const NOW = 32;
+    public const BUBBLES = 1;
+    public const EXIT = 2;
+    public const LOG = 4;
+    public const NOW = 8;
+    public const OUTPUT = 16;
 
     protected array $outputBuffer;
 
     // Options
     protected int $_backtraceArgFrameLimit = 5;
+    protected bool $_bubbles = true;
     protected string $_charset = 'UTF-8';
-    protected bool $_forceBreak = false;
     protected bool $_forceExit = false;
     protected bool $_forceOutputNow = false;
     protected int $_httpCode = 500;
+    protected ?LoggerInterface $_logger = null;
+    protected bool $_logWhenSilent = true;
     protected bool $_outputBacktrace = false;
     protected bool $_outputPrevious = true;
     protected bool $_outputTime = true;
     protected bool $_outputToStderr = true;
     protected bool $_silent = false;
     protected string $_timeFormat = 'Y-m-d\TH:i:s.vO';
-    protected ?\Closure $varExporter = null;
+    protected ?\Closure $_varExporter = null;
 
     public function __construct(array $options = []);
 
-    public function dispatch(): void;
+    public function __invoke(): void;
     public function getOption(string $name): mixed;
-    public function handle(ThrowableController $controller): array;
     public function setOption(string $name, mixed $value): void;
 
     protected function buildOutputArray(ThrowableController $controller): array;
     protected function cleanOutputThrowable(array $outputThrowable): array;
-
-    abstract protected function dispatchCallback(): void;
-
-    protected function handleCallback(array $output): array;
+    abstract protected function handleCallback(array $output): array;
+    abstract protected function invokeCallback(): void;
+    protected function log(\Throwable $throwable, string $message): void;
     protected function print(string $string): void;
 }
 ```
 
 #### Constants ####
 
-_CONTENT\_TYPE_: The mime type of the content that is output by the handler
+_CONTENT\_TYPE_: The mime type of the content that is output by the handler  
 
-_CONTINUE_: When returned within the control code bitmask in the handler's output array, it causes the stack loop to continue onto the next handler after handling; this is the default behavior.  
-_BREAK_: When returned within the control code bitmask in the handler's output array, it causes the stack loop to break after the handler finishes, causing any further down in the stack to not run.  
-_EXIT_: When returned within the control code bitmask in the handler's output array, it causes Catcher to exit after running all handlers.
-
-_OUTPUT_: When returned within the output code bitmask in the handler's output array, it causes the handler to output the throwable when dispatching.  
-_SILENT_: When returned within the output code bitmask in the handler's output array, it causes the handler to be silent.  
-_NOW_: When returned within the output code bitmask in the handler's output array, it causes Catcher to have the handler immediately dispatch.
+_BUBBLES_: When returned within the output bitmask, it causes the stack loop to continue onto the next handler after handling; this is a default behavior.  
+_EXIT_: When returned within the output bitmask, it causes Catcher to exit after running all handlers.  
+_LOG_: When returned within the output bitmask, it causes Catcher to log the output to a supplied logger.  
+_NOW_: When returned within the output bitmask, it causes Catcher to have the handler immediately be invoked.  
+_OUTPUT_: When returned within the output bitkask, it causes the handler to output the throwable when invoked.
 
 #### Properties (Protected) ####
 
@@ -240,11 +225,14 @@ _outputBuffer_: This is where the output arrays representing the handled throwab
 Properties which begin with an underscore all are options. They can be set either through the constructor or via `setHandler` by name, removing the underscore at the beginning. All handlers inherit these options. Options in inherited classes should also begin with an underscore (_\__). How to extend `Handler` will be explained further down in the document.
 
 _backtraceArgFrameLimit_: The number of frames by which there can be arguments output with them. Defaults to _5_.  
+_bubbles_: If true the handler will move onto the next item in the stack of handlers. Defaults to _true_.  
 _charset_: The character set of the output; only used if headers weren't sent before an error occurred. No conversion is done. Defaults to _"UTF\_8"_.  
 _forceBreak_: When set this will force the stack loop to break after the handler has run. Defaults to _false_.  
 _forceExit_: When set this will force an exit after all handlers have been run. Defaults to _false_.  
 _forceOutputNow_: When set this will force output of the handler immediately. Defaults to _false_.  
 _httpCode_: The HTTP code to be sent; possible values are 200, 400-599. Defaults to _500_.  
+_logger_: The PSR-3 compatible logger in which to log to. Defaults to _null_ (no logging).  
+_logWhenSilent_: When set to true the handler will still send logs when silent. Defaults to _true_.  
 _outputBacktrace_: When true will output a stack trace. Defaults to _false_.  
 _outputPrevious_: When true will output previous throwables. Defaults to _true_.  
 _outputTime_: When true will output times to the output. Defaults to _true_.  
@@ -254,7 +242,7 @@ _timeFormat_: The PHP-standard date format which to use for times in output. Def
 _varExporter_: A user-defined closure to use when printing arguments in backtraces. Defaults to _null_.
 
 
-#### MensBeam\Catcher\Handler::dispatch ####
+#### MensBeam\Catcher\Handler::__invoke ####
 
 Outputs the stored throwable arrays in the output buffer.
 
@@ -278,13 +266,13 @@ With a given `ThrowableController` will output an array to be stored in the outp
 
 "Cleans" an output throwable -- an individual item in the output array -- by removing information that's unnecessary in the output; useful for structured data output such as JSON.
 
-#### MensBeam\Catcher\Handler::dispatchCallback (protected) ####
-
-A callback method meant to be extended by inherited classes to control how the class outputs the throwable arrays
-
 #### MensBeam\Catcher\Handler::handleCallback (protected) ####
 
 A callback method meant to be extended by inherited classes where the output array can be manipulated before storing in the output buffer
+
+#### MensBeam\Catcher\Handler::invokeCallback (protected) ####
+
+A callback method meant to be extended by inherited classes to control how the class outputs the throwable arrays
 
 #### MensBeam\Catcher\Handler::print (protected) ####
 
@@ -323,117 +311,23 @@ Returns the previous `ThrowableController` if there is one
 
 Returns the throwable controlled by this class instance
 
-### MensBeam\Catcher\HTMLHandler ###
-
-```php
-namespace MensBeam\Catcher;
-
-class HTMLHandler extends Handler {
-    public const CONTENT_TYPE = 'text/html';
-
-    // Options
-    protected ?\DOMDocument $_document = null;
-    protected string $_errorPath = '/html/body';
-    protected string $_timeFormat = 'H:i:s';
-}
-```
-
-#### Options ####
-
-_document_: The `\DOMDocument` errors should be inserted into. If one isn't provided a document will be created for this purpose.  
-_errorPath_: An XPath path to the element where the errors should be inserted. Defaults to _"/html/body"_.  
-_timeFormat_: Same as in `Handler`, but the default changes to _"H:i:s"_.
-
-### MensBeam\Catcher\JSONHandler ###
-
-```php
-namespace MensBeam\Catcher;
-
-class JSONHandler extends Handler {
-    public const CONTENT_TYPE = 'application/json';
-}
-```
 
 ### MensBeam\Catcher\PlainTextHandler ###
 
 ```php
 namespace MensBeam\Catcher;
-use Psr\Log\LoggerInterface;
 
 class PlainTextHandler extends Handler {
     public const CONTENT_TYPE = 'text/plain';
 
-    // Options
-    protected ?LoggerInterface $_logger = null;
     protected string $_timeFormat = '[H:i:s]';
 }
 ```
 
 #### Options ####
 
-_logger_: The PSR-3 compatible logger in which to log to. Defaults to _null_ (no logging).  
 _timeFormat_: Same as in `Handler`, but the default changes to _"[H:i:s]"_.
 
-## Creating Handlers ##
-
-The default handlers, especially `PlainTextHandler`, are set up to handle most tasks, but obviously more is possible with a bit of work. Thankfully, creating handlers is as simple as extending the `Handler` class. Here is an example of a theoretical `YamlHandler` (which is very similar to `JSONHandler`):
-
-```php
-namespace Your\Namespace\Goes\Here;
-use MensBeam\Catcher\Handler,
-    Symfony\Component\Yaml\Yaml;
-
-
-class YamlHandler extends Handler {
-    public const CONTENT_TYPE = 'application/yaml';
-
-    // Options
-    protected bool _outputObjectAsMap = true;
-    protected bool _outputMultiLineLiteralBlock = true;
-    protected bool _outputEmptyArrayAsSequence = true;
-    protected bool _outputNullAsTilde = false;
-
-
-    protected function dispatchCallback(): void {
-        foreach ($this->outputBuffer as $key => $value) {
-            if ($value['outputCode'] & self::SILENT) {
-                unset($this->outputBuffer[$key]);
-                continue;
-            }
-
-            $this->outputBuffer[$key] = $this->cleanOutputThrowable($this->outputBuffer[$key]);
-        }
-
-        if (count($this->outputBuffer) > 0) {
-            $flags = 0;
-            $flags |= ($this->_outputObjectAsMap) ? Yaml::DUMP_OBJECT_AS_MAP : 0;
-            $flags |= ($this->_outputMultiLineLiteralBlock) ? Yaml::DUMP_MULTI_LINE_LITERAL_BLOCK : 0;
-            $flags |= ($this->_outputEmptyArrayAsSequence) ? Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE : 0;
-            $flags |= ($this->_outputNullAsTilde) ? Yaml::DUMP_NULL_AS_TILDE : 0;
-
-            $this->print(Yaml::dump([
-                'errors' => $this->outputBuffer
-            ], $flags));
-        }
-    }
-}
-```
-
-This theoretical class uses the [`symfony/yaml`][c] package in Composer and exposes a few of its options as options for the Handler. Using this class would be very similar to the examples provided at the beginning of this document:
-
-```php
-#!/usr/bin/env php
-<?php
-use MensBeam\Catcher,
-    Your\Namespace\Goes\Here\YamlHandler;
-require_once('vendor/autoload.php');
-
-$catcher = new Catcher(new YamlHandler([
-    'outputNullAsTilde' => true
-]);
-```
-
-More complex handlers are possible by extending the various methods documented above. Examples can be seen by looking at the code for both `HTMLHandler` and `PlainTextHandler`.
 
 ## Setting a Custom Variable Exporter ##
 
