@@ -308,13 +308,13 @@ abstract class Handler {
         echo $string;
     }
 
-
     protected function varExporter(mixed $value): string|bool {
         $exporter = $this->_varExporter;
-
-        set_error_handler([ $this, 'handleError' ]);
-        $value = $exporter($value);
-        restore_error_handler();
+        if ($exporter !== null) {
+            set_error_handler([ $this, 'handleError' ]);
+            $value = $exporter($value);
+            restore_error_handler();
+        }
 
         return $value;
     }
