@@ -7,7 +7,8 @@
 
 declare(strict_types=1);
 namespace MensBeam\Catcher;
-use Psr\Log\LoggerInterface;
+use MensBeam\Catcher,
+    Psr\Log\LoggerInterface;
 
 
 abstract class Handler {
@@ -146,6 +147,49 @@ abstract class Handler {
         return $output;
     }
 
+    /**
+     * If an error is triggered while logging the error would be output by PHP's
+     * handler. This is used to attempt as best as possible to have the error be
+     * output by Catcher.
+     *
+     * @internal
+     */
+    public function handleError(int $code, string $message, ?string $file = null, ?int $line = null): bool {
+        if ($code && $code & error_reporting()) {
+            // PHP's method for getting the current exception handler is stupid,
+            // but that's how it is...
+            $exceptionHandler = set_exception_handler(null);
+            set_exception_handler($exceptionHandler);
+
+            // If the current exception handler happens to not be Catcher use PHP's handler
+            // instead; this shouldn't happen but is here just in case
+            if (!is_array($exceptionHandler) || !$exceptionHandler[0] instanceof Catcher) {
+                return false;
+            }
+
+            $catcher = $exceptionHandler[0];
+            $handlers = $catcher->getHandlers();
+            $silent = false;
+            foreach ($handlers as $h) {
+                $h->setOption('logger', null);
+                $h->setOption('varExporter', null);
+                $silent = (!$silent) ? $h->getOption('silent') : $silent;
+            }
+
+            // If all of the handlers are silent then use PHP's handler instead; this is
+            // because a valid use for Catcher is to have it be silent but instead have the
+            // logger print the errors to stderr/stdout; if there is an error in the logger
+            // then it wouldn't print.
+            if ($silent) {
+                return false;
+            }
+
+            $catcher->handleThrowable(new Error($message, $code, $file, $line));
+        }
+
+        return true;
+    }
+
     public function setOption(string $name, mixed $value): void {
         $class = get_class($this);
         if (!property_exists($class, "_$name")) {
@@ -219,7 +263,12 @@ abstract class Handler {
     abstract protected function invokeCallback(): void;
 
     protected function log(\Throwable $throwable, string $message): void {
+        if ($this->_logger === null) {
+            return;
+        }
+
         $context = [ 'exception' => $throwable ];
+        set_error_handler([ $this, 'handleError' ]);
         if ($throwable instanceof \Error) {
             switch ($throwable->getCode()) {
                 case \E_NOTICE:
@@ -246,6 +295,7 @@ abstract class Handler {
         } else {
             $this->_logger->critical($message, $context);
         }
+        restore_error_handler();
     }
 
     protected function print(string $string): void {
@@ -256,5 +306,16 @@ abstract class Handler {
         }
 
         echo $string;
+    }
+
+
+    protected function varExporter(mixed $value): string|bool {
+        $exporter = $this->_varExporter;
+
+        set_error_handler([ $this, 'handleError' ]);
+        $value = $exporter($value);
+        restore_error_handler();
+
+        return $value;
     }
 }
