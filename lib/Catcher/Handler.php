@@ -148,9 +148,10 @@ abstract class Handler {
     }
 
     /**
-     * If an error is triggered while logging the error would be output by PHP's
+     * If an error is triggered while logging or using the var exporter the error
+     * would be output by PHP's handler because it occurs within the custom error
      * handler. This is used to attempt as best as possible to have the error be
-     * output by Catcher.
+     * output by Catcher instead.
      *
      * @internal
      */
@@ -167,6 +168,8 @@ abstract class Handler {
                 return false;
             }
 
+            // Iterate through the handlers and disable both logging and the custom
+            // varExporter to prevent infinite looping of error handlers
             $catcher = $exceptionHandler[0];
             $handlers = $catcher->getHandlers();
             $silent = false;
@@ -184,7 +187,7 @@ abstract class Handler {
                 return false;
             }
 
-            $catcher->handleThrowable(new Error($message, $code, $file, $line));
+            $catcher->handleError($code, $message, $file, $line);
         }
 
         return true;
@@ -310,12 +313,15 @@ abstract class Handler {
 
     protected function varExporter(mixed $value): string|bool {
         $exporter = $this->_varExporter;
-        if ($exporter !== null) {
-            set_error_handler([ $this, 'handleError' ]);
-            $value = $exporter($value);
+        set_error_handler([ $this, 'handleError' ]);
+        if ($exporter === null) {
+            $value = print_r($value, true);
             restore_error_handler();
+            return $value;
         }
 
+        $value = $exporter($value);
+        restore_error_handler();
         return $value;
     }
 }
