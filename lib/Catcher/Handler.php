@@ -73,10 +73,6 @@ abstract class Handler {
         foreach ($options as $key => $value) {
             $this->setOption($key, $value);
         }
-
-        if ($this->_varExporter === null) {
-            $this->_varExporter = fn(mixed $value): string|bool => print_r($value, true);
-        }
     }
 
 
