@@ -49,7 +49,7 @@ class PlainTextHandler extends Handler {
             $outputThrowable['line']
         );
 
-        if (!empty($outputThrowable['previous'])) {
+        if (isset($outputThrowable['previous']) && $outputThrowable['previous'] instanceof \Throwable) {
             if ($previous) {
                 $output .= '  ';
             }
@@ -57,24 +57,19 @@ class PlainTextHandler extends Handler {
         }
 
         if (!$previous) {
-            if (isset($outputThrowable['frames']) && count($outputThrowable['frames']) > 0) {
+            if (isset($outputThrowable['frames']) && is_array($outputThrowable['frames']) && count($outputThrowable['frames']) > 0) {
                 $output .= \PHP_EOL . 'Stack trace:' . \PHP_EOL;
                 $maxDigits = strlen((string)count($outputThrowable['frames']));
                 $indent = str_repeat(' ', $maxDigits);
                 foreach ($outputThrowable['frames'] as $key => $frame) {
-                    $method = null;
-                    if (!empty($frame['class'])) {
-                        if (!empty($frame['errorType'])) {
+                    $method = $frame['class'] ?? "{$frame['function']}()" ?? null;
+                    if (isset($frame['class']) && $method === $frame['class']) {
+                        if (isset($frame['errorType'])) {
                             $method = "{$frame['errorType']} ({$frame['class']})";
-                        } else {
-                            $method = $frame['class'];
-                            if (!empty($frame['function'])) {
-                                $ref = new \ReflectionMethod($frame['class'], $frame['function']);
-                                $method .= (($ref->isStatic()) ? '::' : '->') . $frame['function'];
-                            }
+                        } elseif (isset($frame['function'])) {
+                            $ref = new \ReflectionMethod($frame['class'], $frame['function']);
+                            $method .= (($ref->isStatic()) ? '::' : '->') . $frame['function'] . '()';
                         }
-                    } elseif (!empty($frame['function'])) {
-                        $method = $frame['function'];
                     }
 
                     $output .= sprintf("%{$maxDigits}d. %s  %s:%d" . \PHP_EOL,
@@ -84,8 +79,7 @@ class PlainTextHandler extends Handler {
                         $frame['line']
                     );
 
-                    if (!empty($frame['args']) && $this->_backtraceArgFrameLimit > $key) {
-                        $varExporter = $this->_varExporter;
+                    if (isset($frame['args']) && $this->_backtraceArgFrameLimit > $key) {
                         $output .= preg_replace('/^/m', "$indent| ", $this->varExporter($frame['args'])) . \PHP_EOL;
                     }
                 }
@@ -100,7 +94,7 @@ class PlainTextHandler extends Handler {
 
             if (!empty($outputThrowable['time'])) {
                 $timestamp = $outputThrowable['time']->format($this->_timeFormat) . '  ';
-                $output = ltrim(preg_replace('/^/m', str_repeat(' ', strlen($timestamp)), "$timestamp$output"));
+                $output = ltrim(preg_replace('/^(?=\h*\S)/m', str_repeat(' ', strlen($timestamp)), "$timestamp$output"));
             }
         }
 

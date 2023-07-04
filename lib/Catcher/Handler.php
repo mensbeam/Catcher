@@ -159,7 +159,7 @@ abstract class Handler {
             set_exception_handler($exceptionHandler);
 
             // If the current exception handler happens to not be Catcher use PHP's handler
-            // instead; this shouldn't happen but is here just in case
+            // instead; this shouldn't happen in normal operation but is here just in case
             if (!is_array($exceptionHandler) || !$exceptionHandler[0] instanceof Catcher) {
                 return false;
             }
@@ -168,18 +168,23 @@ abstract class Handler {
             // varExporter to prevent infinite looping of error handlers
             $catcher = $exceptionHandler[0];
             $handlers = $catcher->getHandlers();
-            $silent = false;
+            $handlersCount = count($handlers);
+            $silentCount = 0;
             foreach ($handlers as $h) {
                 $h->setOption('logger', null);
                 $h->setOption('varExporter', null);
-                $silent = (!$silent) ? $h->getOption('silent') : $silent;
+
+                if ($h->getOption('silent')) {
+                    $silentCount++;
+                }
             }
 
             // If all of the handlers are silent then use PHP's handler instead; this is
             // because a valid use for Catcher is to have it be silent but instead have the
             // logger print the errors to stderr/stdout; if there is an error in the logger
             // then it wouldn't print.
-            if ($silent) {
+            if ($silentCount === $handlersCount) {
+                // TODO: Output an error here to state that Catcher failed?
                 return false;
             }
 
@@ -310,13 +315,7 @@ abstract class Handler {
     protected function varExporter(mixed $value): string|bool {
         $exporter = $this->_varExporter;
         set_error_handler([ $this, 'handleError' ]);
-        if ($exporter === null) {
-            $value = print_r($value, true);
-            restore_error_handler();
-            return $value;
-        }
-
-        $value = $exporter($value);
+        $value = ($exporter === null) ? print_r($value, true) : $exporter($value);
         restore_error_handler();
         return $value;
     }

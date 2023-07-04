@@ -13,7 +13,8 @@ use MensBeam\Catcher\{
     RangeException,
     ThrowableController
 };
-use Psr\Log\LoggerInterface,
+use MensBeam\Catcher,
+    Psr\Log\LoggerInterface,
     Phake;
 
 
@@ -78,12 +79,37 @@ class TestHandler extends ErrorHandlingTestCase {
         ob_start();
         $h();
         $o = ob_get_clean();
-        $this->assertNotNull($o);
+        $this->assertNotEmpty($o);
         $o = json_decode($o, true);
         $this->assertSame(\Exception::class, $o['class']);
         $this->assertSame(__FILE__, $o['file']);
         $this->assertSame(__LINE__ - 9, $o['line']);
         $this->assertSame('Ook!', $o['message']);
+    }
+
+    /** @dataProvider provideSupplementalErrorHandlingTests */
+    public function testSupplementalErrorHandling(\Closure $closure, bool $useCatcher, bool $silent): void {
+        if (!$silent) {
+            $this->handler->setOption('print', true);
+            $this->handler->setOption('printJSON', false);
+            $this->handler->setOption('outputToStderr', false);
+        } else {
+            $this->handler->setOption('silent', true);
+        }
+
+        if ($useCatcher) {
+            $c = new Catcher($this->handler);
+        }
+
+        ob_start();
+        $closure($this->handler);
+        $o = ob_get_clean();
+        $this->assertNotEmpty($o);
+
+        if ($useCatcher) {
+            $c->unregister();
+            unset($c);
+        }
     }
 
 
@@ -189,6 +215,33 @@ class TestHandler extends ErrorHandlingTestCase {
 
         foreach ($options as $o) {
             yield $o;
+        }
+    }
+
+    public static function provideSupplementalErrorHandlingTests(): iterable {
+        $iterable = [
+            // Test with a logger that errors without a Catcher
+            [ function (Handler $h): void {
+                $h->setOption('logger', new FailLogger());
+                $h->handle(new ThrowableController(new \Exception('Ook!')));
+                $h();
+            }, false, false ],
+            // Test with a logger that errors with a Catcher
+            [ function (Handler $h): void {
+                $h->setOption('logger', new FailLogger());
+                $h->handle(new ThrowableController(new \Exception('Ook!')));
+                $h();
+            }, true, false ],
+            // Test with a logger that errors with a Catcher but silent
+            [ function (Handler $h): void {
+                $h->setOption('logger', new FailLogger());
+                $h->handle(new ThrowableController(new \Exception('Ook!')));
+                $h();
+            }, true, true ]
+        ];
+
+        foreach ($iterable as $i) {
+            yield $i;
         }
     }
 }

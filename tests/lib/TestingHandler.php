@@ -16,6 +16,8 @@ class TestingHandler extends Handler {
     protected ?string $_name = null;
     // Could just use silent option instead, but we need to test Handler::SILENT
     protected bool $_print = false;
+    // When printing output, print it as JSON
+    protected bool $_printJSON = true;
 
 
     protected function handleCallback(array $output): array {
@@ -25,10 +27,6 @@ class TestingHandler extends Handler {
 
     protected function invokeCallback(): void {
         foreach ($this->outputBuffer as $o) {
-            if (($o['code'] & self::OUTPUT) === 0) {
-                continue;
-            }
-
             if ($o['code'] & self::LOG) {
                 $this->log($o['controller']->getThrowable(), json_encode([
                     'class' => $o['class'],
@@ -39,10 +37,14 @@ class TestingHandler extends Handler {
                 ]));
             }
 
+            if (($o['code'] & self::OUTPUT) === 0) {
+                continue;
+            }
+
             $o = $this->cleanOutputThrowable($o);
 
             if ($this->_print) {
-                $this->print(json_encode($o, \JSON_THROW_ON_ERROR));
+                $this->print(($this->_printJSON) ? json_encode($o, \JSON_THROW_ON_ERROR) : var_dump($o) ?? 'FAIL');
             }
 
             $this->output[] = $o;
