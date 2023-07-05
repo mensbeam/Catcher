@@ -31,6 +31,21 @@ class TestHandler extends ErrorHandlingTestCase {
         ]);
     }
 
+    /** @dataProvider provideArgumentSerializationTests */
+    public function testArgumentSerialization(mixed $arg): void {
+        // This looks silly because the argument is never used, but the handler will
+        // pick it up and print it anyway which is what we're testing here
+        $this->handler->setOption('print', true);
+        $this->handler->setOption('printJSON', false);
+        $this->handler->setOption('outputToStderr', false);
+        $this->handler->handle(new ThrowableController(new \Exception('Ook!')));
+        $h = $this->handler;
+        ob_start();
+        $h();
+        $o = ob_get_clean();
+        $this->assertNotEmpty($o);
+    }
+
     /** @dataProvider provideHandlingTests */
     public function testHandling(\Throwable $throwable, int $expectedCode, array $options = []): void {
         foreach ($options as $k => $v) {
@@ -126,6 +141,22 @@ class TestHandler extends ErrorHandlingTestCase {
     }
 
 
+    public static function provideArgumentSerializationTests(): iterable {
+        $options = [
+            [ fn() => true ],
+            [ new \stdClass() ],
+            [ new class{} ],
+            [ (object)[] ],
+            [ 'ook' ],
+            [ 42 ],
+            [ \M_PI ]
+        ];
+
+        foreach ($options as $o) {
+            yield $o;
+        }
+    }
+
     public static function provideHandlingTests(): iterable {
         $options = [
             [ new \Exception('Ook!'), Handler::BUBBLES | Handler::OUTPUT | Handler::EXIT, [ 'forceExit' => true ] ],
@@ -209,8 +240,7 @@ class TestHandler extends ErrorHandlingTestCase {
             [ 'outputTime', false ],
             [ 'outputToStderr', false ],
             [ 'silent', true ],
-            [ 'timeFormat', 'Y-m-d' ],
-            [ 'varExporter', fn(mixed $value): string|bool => var_export($value, true) ]
+            [ 'timeFormat', 'Y-m-d' ]
         ];
 
         foreach ($options as $o) {

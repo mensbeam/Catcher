@@ -44,7 +44,20 @@ class TestingHandler extends Handler {
             $o = $this->cleanOutputThrowable($o);
 
             if ($this->_print) {
-                $this->print(($this->_printJSON) ? json_encode($o, \JSON_THROW_ON_ERROR) : var_dump($o) ?? 'FAIL');
+                if (!$this->_printJSON) {
+                    $oo = '';
+                    foreach ($o['frames'] as $f) {
+                        if (!isset($f['args'])) {
+                            continue;
+                        }
+                        $oo .= $this->serializeArgs($f['args']) . "\n";
+                    }
+                    $oo = rtrim($oo);
+                } else {
+                    $oo = json_encode($o, \JSON_THROW_ON_ERROR);
+                }
+
+                $this->print($oo);
             }
 
             $this->output[] = $o;

@@ -49,7 +49,7 @@ class PlainTextHandler extends Handler {
             $outputThrowable['line']
         );
 
-        if (isset($outputThrowable['previous']) && $outputThrowable['previous'] instanceof \Throwable) {
+        if (isset($outputThrowable['previous']) && is_array($outputThrowable['previous'])) {
             if ($previous) {
                 $output .= '  ';
             }
@@ -80,7 +80,7 @@ class PlainTextHandler extends Handler {
                     );
 
                     if (isset($frame['args']) && $this->_backtraceArgFrameLimit > $key) {
-                        $output .= preg_replace('/^/m', "$indent| ", $this->varExporter($frame['args'])) . \PHP_EOL;
+                        $output .= preg_replace('/^/m', "$indent| ", $this->serializeArgs($frame['args'])) . \PHP_EOL;
                     }
                 }
 

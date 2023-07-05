@@ -59,12 +59,6 @@ abstract class Handler {
     protected bool $_silent = false;
     /** The PHP-standard date format which to use for timestamps in output */
     protected string $_timeFormat = 'Y-m-d\TH:i:s.vO';
-    /**
-     * A user-defined closure to use when printing arguments in backtraces
-     *
-     * @var ?(mixed): string|bool
-     */
-    protected ?\Closure $_varExporter = null;
 
 
 
@@ -164,15 +158,14 @@ abstract class Handler {
                 return false;
             }
 
-            // Iterate through the handlers and disable both logging and the custom
-            // varExporter to prevent infinite looping of error handlers
+            // Iterate through the handlers and disable logging to prevent
+            // infinite looping of error handlers
             $catcher = $exceptionHandler[0];
             $handlers = $catcher->getHandlers();
             $handlersCount = count($handlers);
             $silentCount = 0;
             foreach ($handlers as $h) {
                 $h->setOption('logger', null);
-                $h->setOption('varExporter', null);
 
                 if ($h->getOption('silent')) {
                     $silentCount++;
@@ -312,11 +305,29 @@ abstract class Handler {
         echo $string;
     }
 
-    protected function varExporter(mixed $value): string|bool {
-        $exporter = $this->_varExporter;
-        set_error_handler([ $this, 'handleError' ]);
-        $value = ($exporter === null) ? print_r($value, true) : $exporter($value);
-        restore_error_handler();
-        return $value;
+    protected function serializeArgs(mixed $value): string {
+        $o = '';
+        if (count($value) > 0) {
+            $o .= '(' . \PHP_EOL;
+            $a = '';
+            foreach ($value as $v) {
+                $aa = null;
+                if ($v instanceof \Closure) {
+                    $aa = 'Closure';
+                } elseif (is_array($v)) {
+                    $aa = 'array';
+                } elseif (is_object($v)) {
+                    $type = gettype($v);
+                    $aa = ($type === 'object') ? get_class($v) : $type;
+                } else {
+                    $aa = var_export($v, true);
+                }
+                $a .= sprintf('    %s,' . \PHP_EOL, $aa);
+            }
+            $a = rtrim($a, ',' . \PHP_EOL) . \PHP_EOL;
+            $o .= "$a)" . \PHP_EOL;
+        }
+
+        return $o;
     }
 }

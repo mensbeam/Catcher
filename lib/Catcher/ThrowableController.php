@@ -151,25 +151,25 @@ class ThrowableController {
         }
 
         // Add a frame for the throwable to the beginning of the array
-        // $f = [
-        //     'file' => $this->throwable->getFile() ?: '[UNKNOWN]',
-        //     'line' => (int)$this->throwable->getLine(),
-        //     'class' => $this->throwable::class,
-        //     'args' => [
-        //         $this->throwable->getMessage()
-        //     ]
-        // ];
+        $f = [
+            'file' => $this->throwable->getFile() ?: '[UNKNOWN]',
+            'line' => (int)$this->throwable->getLine(),
+            'class' => $this->throwable::class,
+            'args' => [
+                $this->throwable->getMessage()
+            ]
+        ];
 
-        // // Add the error code and type if it is an Error.
-        // if ($this->throwable instanceof \Error) {
-        //     $errorType = $this->getErrorType();
-        //     if ($errorType !== null) {
-        //         $f['code'] = $this->throwable->getCode();
-        //         $f['errorType'] = $errorType;
-        //     }
-        // }
+        // Add the error code and type if it is an Error.
+        if ($this->throwable instanceof \Error) {
+            $errorType = $this->getErrorType();
+            if ($errorType !== null) {
+                $f['code'] = $this->throwable->getCode();
+                $f['errorType'] = $errorType;
+            }
+        }
 
-        // array_unshift($frames, $f);
+        array_unshift($frames, $f);
 
         // Go through previous throwables and merge in their frames
         if ($prev = $this->getPrevious()) {

@@ -197,7 +197,6 @@ abstract class Handler {
     protected bool $_outputToStderr = true;
     protected bool $_silent = false;
     protected string $_timeFormat = 'Y-m-d\TH:i:s.vO';
-    protected ?\Closure $_varExporter = null;
 
     public function __construct(array $options = []);
 
@@ -246,8 +245,7 @@ _outputPrevious_: When true will output previous throwables. Defaults to _true_.
 _outputTime_: When true will output times to the output. Defaults to _true_.  
 _outputToStderr_: When the SAPI is cli output errors to stderr. Defaults to _true_.  
 _silent_: When true the handler won't output anything. Defaults to _false_.  
-_timeFormat_: The PHP-standard date format which to use for times in output. Defaults to _"Y-m-d\\TH:i:s.vO"_.  
-_varExporter_: A user-defined closure to use when printing arguments in backtraces. Defaults to _null_.
+_timeFormat_: The PHP-standard date format which to use for times in output. Defaults to _"Y-m-d\\TH:i:s.vO"_.
 
 
 #### MensBeam\Catcher\Handler::__invoke ####
@@ -335,37 +333,3 @@ class PlainTextHandler extends Handler {
 #### Options ####
 
 _timeFormat_: Same as in `Handler`, but the default changes to _"[H:i:s]"_.
-
-
-## Setting a Custom Variable Exporter ##
-
-By default internally [`print_r`][e] is used. This is due to tests made internally where it performed the best out of built-in options, including other functions which might otherwise be preferred. Starting in v1.0.2 `Handler`'s `varExporter` option allows for defining how arguments are printed in backtraces in Catcher. Here is an example:
-
-```php
-#!/usr/bin/env php
-<?php
-use MensBeam\Catcher,
-    Symfony\Component\VarExporter\VarExporter;
-use MensBeam\Catcher\PlainTextHandler;
-require_once('vendor/autoload.php');
-
-$c = new Catcher(new PlainTextHandler([
-    'outputBacktrace' => true,
-    'varExporter' => fn(mixed $value): string|bool => VarExporter::export($value)
-]));
-
-throw new \Exception('Ook!');
-```
-
-Output:
-```
-[21:12:00]  Exception: Ook! in file /home/mensbeam/super-awesome-project/ook.php on line 13
-
-            Stack trace:
-            1. Exception  /home/mensbeam/super-awesome-project/ook.php:13
-             | [
-             |     'Ook!',
-             | ]
-```
-
-This example above uses the [symfony/var-exporter][f] package for a more modern human-readable variable export. However, using any variable printer is possible.
