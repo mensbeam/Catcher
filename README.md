@@ -210,6 +210,7 @@ abstract class Handler {
     abstract protected function invokeCallback(): void;
     protected function log(\Throwable $throwable, string $message): void;
     protected function print(string $string): void;
+    protected function serializeArgs(mixed $value): string;
 }
 ```
 
@@ -283,6 +284,10 @@ A callback method meant to be extended by inherited classes to control how the c
 #### MensBeam\Catcher\Handler::print (protected) ####
 
 Prints the provided string to stderr or stdout depending on how the handler is configured and which SAPI is being used.
+
+#### MensBeam\Catcher\Handler::serializeArgs (protected) ####
+
+Serializes argument arrays in stack traces; does not recurse, only showing top level arguments.
 
 ### MensBeam\Catcher\ThrowableController ####
 
