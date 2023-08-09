@@ -59,6 +59,14 @@ class Catcher {
 
 
 
+
+    /** Checks if the error code is fatal */
+    public static function isErrorFatal(int $code): bool {
+        return in_array($code, [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_COMPILE_ERROR, \E_USER_ERROR, \E_RECOVERABLE_ERROR ]);
+    }
+
+
+
     public function getHandlers(): array {
         return $this->handlers;
     }
@@ -159,7 +167,7 @@ class Catcher {
     public function handleError(int $code, string $message, ?string $file = null, ?int $line = null): bool {
         if ($code && $code & error_reporting()) {
             $error = new Error($message, $code, $file, $line);
-            if ($this->errorHandlingMethod > self::THROW_NO_ERRORS && ($this->errorHandlingMethod === self::THROW_ALL_ERRORS || $this->isErrorFatal($code)) && !$this->isShuttingDown) {
+            if ($this->errorHandlingMethod > self::THROW_NO_ERRORS && ($this->errorHandlingMethod === self::THROW_ALL_ERRORS || self::isErrorFatal($code)) && !$this->isShuttingDown) {
                 $this->lastThrowable = $error;
                 throw $error;
             } else {
@@ -198,7 +206,7 @@ class Catcher {
             $exit ||
             $this->isShuttingDown ||
             $throwable instanceof \Exception ||
-            ($throwable instanceof Error && $this->isErrorFatal($throwable->getCode())) ||
+            ($throwable instanceof Error && self::isErrorFatal($throwable->getCode())) ||
             (!$throwable instanceof Error && $throwable instanceof \Error)
         ) {
             foreach ($this->handlers as $h) {
@@ -230,7 +238,7 @@ class Catcher {
 
         $this->isShuttingDown = true;
         if ($error = $this->getLastError()) {
-            if ($this->isErrorFatal($error['type'])) {
+            if (self::isErrorFatal($error['type'])) {
                 $errorReporting = error_reporting();
                 if ($this->errorReporting !== null && $this->errorReporting === $errorReporting && ($this->errorReporting & \E_ERROR) === 0) {
                     error_reporting($errorReporting | \E_ERROR);
@@ -249,11 +257,6 @@ class Catcher {
     protected function exit(int $status): void {
         // This won't be shown as executed in code coverage
         exit($status); // @codeCoverageIgnore
-    }
-
-    /** Checks if the error code is fatal */
-    protected function isErrorFatal(int $code): bool {
-        return in_array($code, [ \E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_COMPILE_ERROR, \E_USER_ERROR, \E_RECOVERABLE_ERROR ]);
     }
 
     /** Exists so the method may be replaced when mocking in tests */

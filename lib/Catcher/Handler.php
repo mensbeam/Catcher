@@ -153,7 +153,7 @@ abstract class Handler {
             set_exception_handler($exceptionHandler);
 
             // If the current exception handler happens to not be Catcher use PHP's handler
-            // instead; this shouldn't happen in normal operation but is here just in case
+            // instead.
             if (!is_array($exceptionHandler) || !$exceptionHandler[0] instanceof Catcher) {
                 return false;
             }
@@ -174,11 +174,10 @@ abstract class Handler {
 
             // If all of the handlers are silent then use PHP's handler instead; this is
             // because a valid use for Catcher is to have it be silent but instead have the
-            // logger print the errors to stderr/stdout; if there is an error in the logger
-            // then it wouldn't print.
-            if ($silentCount === $handlersCount) {
-                // TODO: Output an error here to state that Catcher failed?
-                return false;
+            // logger print the errors to stderr/stdout. This should only apply to fatal
+            // errors; this shouldn't happen in normal operation but is here just in case
+            if (Catcher::isErrorFatal($code) && $silentCount === $handlersCount) {
+                return false; //@codeCoverageIgnore
             }
 
             $catcher->handleError($code, $message, $file, $line);

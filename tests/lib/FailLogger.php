@@ -19,5 +19,11 @@ class FailLogger implements LoggerInterface {
         $v = vfsStream::setup('ook');
         $d = vfsStream::newDirectory('ook', 0777)->at($v);
         file_put_contents($d->url(), $message);
+
+        echo "Ook!\n";
+    }
+
+    public function error(string|\Stringable $message, array $context = []): void {
+        trigger_error('Ook!', \E_USER_ERROR);
     }
 }

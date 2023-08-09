@@ -8,7 +8,7 @@
 declare(strict_types=1);
 namespace MensBeam\Catcher\Test;
 use MensBeam\Catcher\{
-    Error,
+    Error as CatcherError,
     Handler,
     RangeException,
     ThrowableController
@@ -128,9 +128,10 @@ class TestHandler extends ErrorHandlingTestCase {
     }
 
 
-    public function testFatalError(): void {
-        $this->expectException(RangeException::class);
-        $this->handler->setOption('httpCode', 42);
+    /** @dataProvider provideFatalErrorTests */
+    public function testFatalErrors(string $throwableClassName, \Closure $closure): void {
+        $this->expectException($throwableClassName);
+        $closure($this->handler);
     }
 
     /** @dataProvider provideNonFatalErrorTests */
@@ -140,6 +141,29 @@ class TestHandler extends ErrorHandlingTestCase {
         $this->assertSame($message, $this->lastError?->getMessage());
     }
 
+
+    public static function provideFatalErrorTests(): iterable {
+        $iterable = [
+            [
+                RangeException::class,
+                function (Handler $h): void {
+                    $h->setOption('httpCode', 42);
+                }
+            ],
+            [
+                CatcherError::class,
+                function (Handler $h): void {
+                    $c = new Catcher();
+                    $l = new FailLogger();
+                    $l->error('Ook!');
+                }
+            ]
+        ];
+
+        foreach ($iterable as $i) {
+            yield $i;
+        }
+    }
 
     public static function provideArgumentSerializationTests(): iterable {
         $options = [
@@ -162,7 +186,7 @@ class TestHandler extends ErrorHandlingTestCase {
             [ new \Exception('Ook!'), Handler::BUBBLES | Handler::OUTPUT | Handler::EXIT, [ 'forceExit' => true ] ],
             [ new \Error('Ook!'), Handler::BUBBLES | Handler::OUTPUT ],
             [ new \Exception('Ook!'), Handler::BUBBLES, [ 'silent' => true ] ],
-            [ new Error('Ook!', \E_ERROR, '/dev/null', 42, new \Error('Eek!')), Handler::BUBBLES | Handler::OUTPUT | Handler::NOW, [ 'forceOutputNow' => true ] ],
+            [ new CatcherError('Ook!', \E_ERROR, '/dev/null', 42, new \Error('Eek!')), Handler::BUBBLES | Handler::OUTPUT | Handler::NOW, [ 'forceOutputNow' => true ] ],
             [ new \Exception('Ook!'), Handler::BUBBLES, [ 'silent' => true, 'logger' => Phake::mock(LoggerInterface::class), 'logWhenSilent' => false ] ],
             [ new \Error('Ook!'), Handler::BUBBLES | Handler::OUTPUT | Handler::LOG, [ 'forceOutputNow' => true, 'logger' => Phake::mock(LoggerInterface::class) ] ]
         ];
@@ -178,19 +202,19 @@ class TestHandler extends ErrorHandlingTestCase {
 
     public static function provideLogTests(): iterable {
         $options = [
-            [ new Error('Ook!', \E_NOTICE, '/dev/null', 0, new \Error('Eek!')), 'notice' ],
-            [ new Error('Ook!', \E_USER_NOTICE, '/dev/null', 0), 'notice' ],
-            [ new Error('Ook!', \E_STRICT, '/dev/null', 0, new \Error('Eek!')), 'notice' ],
-            [ new Error('Ook!', \E_WARNING, '/dev/null', 0), 'warning' ],
-            [ new Error('Ook!', \E_COMPILE_WARNING, '/dev/null', 0, new \Error('Eek!')), 'warning' ],
-            [ new Error('Ook!', \E_USER_WARNING, '/dev/null', 0), 'warning' ],
-            [ new Error('Ook!', \E_DEPRECATED, '/dev/null', 0, new \Error('Eek!')), 'warning' ],
-            [ new Error('Ook!', \E_USER_DEPRECATED, '/dev/null', 0), 'warning' ],
-            [ new Error('Ook!', \E_PARSE, '/dev/null', 0, new \Error('Eek!')), 'critical' ],
-            [ new Error('Ook!', \E_CORE_ERROR, '/dev/null', 0), 'critical' ],
-            [ new Error('Ook!', \E_COMPILE_ERROR, '/dev/null', 0, new \Error('Eek!')), 'critical' ],
-            [ new Error('Ook!', \E_ERROR, '/dev/null', 0), 'error' ],
-            [ new Error('Ook!', \E_USER_ERROR, '/dev/null', 0, new \Error('Eek!')), 'error' ],
+            [ new CatcherError('Ook!', \E_NOTICE, '/dev/null', 0, new \Error('Eek!')), 'notice' ],
+            [ new CatcherError('Ook!', \E_USER_NOTICE, '/dev/null', 0), 'notice' ],
+            [ new CatcherError('Ook!', \E_STRICT, '/dev/null', 0, new \Error('Eek!')), 'notice' ],
+            [ new CatcherError('Ook!', \E_WARNING, '/dev/null', 0), 'warning' ],
+            [ new CatcherError('Ook!', \E_COMPILE_WARNING, '/dev/null', 0, new \Error('Eek!')), 'warning' ],
+            [ new CatcherError('Ook!', \E_USER_WARNING, '/dev/null', 0), 'warning' ],
+            [ new CatcherError('Ook!', \E_DEPRECATED, '/dev/null', 0, new \Error('Eek!')), 'warning' ],
+            [ new CatcherError('Ook!', \E_USER_DEPRECATED, '/dev/null', 0), 'warning' ],
+            [ new CatcherError('Ook!', \E_PARSE, '/dev/null', 0, new \Error('Eek!')), 'critical' ],
+            [ new CatcherError('Ook!', \E_CORE_ERROR, '/dev/null', 0), 'critical' ],
+            [ new CatcherError('Ook!', \E_COMPILE_ERROR, '/dev/null', 0, new \Error('Eek!')), 'critical' ],
+            [ new CatcherError('Ook!', \E_ERROR, '/dev/null', 0), 'error' ],
+            [ new CatcherError('Ook!', \E_USER_ERROR, '/dev/null', 0, new \Error('Eek!')), 'error' ],
             [ new \PharException('Ook!'), 'alert' ],
             [ new \Exception('Ook!'), 'critical' ],
         ];
