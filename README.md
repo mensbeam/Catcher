@@ -218,7 +218,7 @@ abstract class Handler {
 
 _CONTENT\_TYPE_: The mime type of the content that is output by the handler  
 
-_BUBBLES_: When returned within the output bitmask, it causes the stack loop to continue onto the next handler after handling; this is a default behavior.  
+_BUBBLES_: When returned within the output bitmask, it causes the stack loop to continue onto the next handler after handling; this is the default behavior.  
 _EXIT_: When returned within the output bitmask, it causes Catcher to exit after running all handlers.  
 _LOG_: When returned within the output bitmask, it causes Catcher to log the output to a supplied logger.  
 _NOW_: When returned within the output bitmask, it causes Catcher to have the handler immediately be invoked.  
@@ -321,6 +321,23 @@ Returns the previous `ThrowableController` if there is one
 #### MensBeam\Catcher\ThrowableController::getThrowable ####
 
 Returns the throwable controlled by this class instance
+
+
+### MensBeam\Catcher\JSONHandler ###
+
+```php
+namespace MensBeam\Catcher;
+
+class JSONHandler extends Handler {
+    public const CONTENT_TYPE = 'application/json';
+
+    protected bool $_prettyPrint = true;
+}
+```
+
+#### Options ####
+
+_prettyPrint_: If true the handler will pretty print JSON output. Defaults to _true_.
 
 
 ### MensBeam\Catcher\PlainTextHandler ###
