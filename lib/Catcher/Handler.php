@@ -242,7 +242,6 @@ abstract class Handler {
 
     protected function cleanOutputThrowable(array $outputThrowable): array {
         unset($outputThrowable['controller']);
-        unset($outputThrowable['code']);
 
         if (isset($outputThrowable['previous'])) {
             $outputThrowable['previous'] = $this->cleanOutputThrowable($outputThrowable['previous']);

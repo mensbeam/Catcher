@@ -10,26 +10,37 @@ namespace MensBeam\Catcher\Test;
 use MensBeam\Catcher\{
     Error,
     Handler,
-    PlainTextHandler,
+    JSONHandler,
     ThrowableController
 };
 use Psr\Log\LoggerInterface,
     Phake;
 
 
-/** @covers \MensBeam\Catcher\PlainTextHandler */
-class TestPlainTextHandler extends \PHPUnit\Framework\TestCase {
+/** @covers \MensBeam\Catcher\JSONHandler */
+class TestJSONHandler extends \PHPUnit\Framework\TestCase {
     protected ?Handler $handler = null;
 
 
     public function setUp(): void {
         parent::setUp();
 
-        $this->handler = new PlainTextHandler([
+        $this->handler = new JSONHandler([
             'outputBacktrace' => true,
             'silent' => true
         ]);
     }
+
+    ///** @dataProvider provideHandlingTests */
+    /*public function testHandling(\Throwable $throwable, int $expectedCode, array $options = []): void {
+        foreach ($options as $k => $v) {
+            $this->handler->setOption($k, $v);
+        }
+
+        $o = $this->handler->handle(new ThrowableController($throwable));
+        $this->assertSame($throwable::class, $o['controller']->getThrowable()::class);
+        $this->assertEquals($expectedCode, $o['code']);
+    }*/
 
     /** @dataProvider provideInvocationTests */
     public function testInvocation(\Throwable $throwable, bool $silent, bool $log, ?string $logMethodName, int $line): void {
@@ -44,20 +55,18 @@ class TestPlainTextHandler extends \PHPUnit\Framework\TestCase {
         }
 
         $o = $this->handler->handle(new ThrowableController($throwable));
-
         $c = $o['class'] ?? null;
-        if ($c !== null && !empty($o['errorType'])) {
-            $c = $o['errorType'];
-        }
 
         $h = $this->handler;
         ob_start();
         $h();
         $u = ob_get_clean();
-        $u = substr($u, 0, strpos($u, \PHP_EOL) ?: 0);
 
         if (!$silent) {
-            $this->assertMatchesRegularExpression(sprintf('/^\[[\d:]+\]  %s: Ook\! in file %s on line %s$/', preg_quote($c, '/'), preg_quote(__FILE__, '/'), $line), $u);
+            $u = json_decode($u, true);
+            $this->assertEquals($c, $u['class']);
+            $this->assertEquals(__FILE__, $u['file']);
+            $this->assertEquals($line, $u['line']);
         } else {
             $this->assertSame('', $u);
         }
