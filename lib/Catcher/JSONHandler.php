@@ -14,6 +14,8 @@ class JSONHandler extends Handler {
 
     /** If true the handler will pretty print JSON output; defaults to true */
     protected bool $_prettyPrint = true;
+    /** If true the handler will pretty print JSON output when logging; defaults to false */
+    protected bool $_prettyPrintWhenLogging = false;
 
 
     protected function handleCallback(array $output): array {
@@ -40,9 +42,6 @@ class JSONHandler extends Handler {
         $controller = $outputThrowable['controller'];
         $output = $this->cleanOutputThrowable($outputThrowable);
         $jsonFlags = \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE;
-        if ($this->_prettyPrint) {
-            $jsonFlags |= \JSON_PRETTY_PRINT;
-        }
 
         if (isset($outputThrowable['previous'])) {
             $output['previous'] = $this->serializeOutputThrowable($outputThrowable['previous'], true);
@@ -57,10 +56,10 @@ class JSONHandler extends Handler {
             if ($outputThrowable['code'] & self::LOG) {
                 $o = $output;
                 unset($o['time']);
-                $this->log($controller->getThrowable(), json_encode($o, $jsonFlags));
+                $this->log($controller->getThrowable(), json_encode($o, ($this->_prettyPrintWhenLogging) ? $jsonFlags | \JSON_PRETTY_PRINT : $jsonFlags));
             }
 
-            $output = json_encode($output, $jsonFlags);
+            $output = json_encode($output, ($this->_prettyPrint) ? $jsonFlags | \JSON_PRETTY_PRINT : $jsonFlags);
         }
 
         return $output;

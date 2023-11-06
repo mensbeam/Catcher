@@ -22,6 +22,13 @@ abstract class Handler {
     public const OUTPUT = 16;
 
     /**
+     * The last throwable (as an output array) that was handled by this handler
+     *
+     * @var ?array[]
+     */
+    protected ?array $lastOutputThrowable = null;
+
+    /**
      * Array of HandlerOutputs the handler creates
      *
      * @var array[]
@@ -90,7 +97,12 @@ abstract class Handler {
         }
 
         $this->invokeCallback();
+        $this->lastOutputThrowable = end($this->outputBuffer) ?: null;
         $this->outputBuffer = [];
+    }
+
+    public function getLastOutputThrowable(): ?array {
+        return $this->lastOutputThrowable;
     }
 
     public function getOption(string $name): mixed {

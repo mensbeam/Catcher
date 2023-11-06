@@ -201,6 +201,7 @@ abstract class Handler {
     public function __construct(array $options = []);
 
     public function __invoke(): void;
+    public function getLastOutputThrowable(): ?array;
     public function getOption(string $name): mixed;
     public function setOption(string $name, mixed $value): void;
 
@@ -252,6 +253,10 @@ _timeFormat_: The PHP-standard date format which to use for times in output. Def
 #### MensBeam\Catcher\Handler::__invoke ####
 
 Outputs the stored throwable arrays in the output buffer.
+
+#### MensBeam\Catcher\Handler::getLastOutputThrowable ####
+
+Returns the last output throwable array handled by this handler (or null if there hasn't been one).
 
 #### MensBeam\Catcher\Handler::getOption ####
 

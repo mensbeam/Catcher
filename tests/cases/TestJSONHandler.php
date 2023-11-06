@@ -31,17 +31,6 @@ class TestJSONHandler extends \PHPUnit\Framework\TestCase {
         ]);
     }
 
-    ///** @dataProvider provideHandlingTests */
-    /*public function testHandling(\Throwable $throwable, int $expectedCode, array $options = []): void {
-        foreach ($options as $k => $v) {
-            $this->handler->setOption($k, $v);
-        }
-
-        $o = $this->handler->handle(new ThrowableController($throwable));
-        $this->assertSame($throwable::class, $o['controller']->getThrowable()::class);
-        $this->assertEquals($expectedCode, $o['code']);
-    }*/
-
     /** @dataProvider provideInvocationTests */
     public function testInvocation(\Throwable $throwable, bool $silent, bool $log, ?string $logMethodName, int $line): void {
         $this->handler->setOption('outputToStderr', false);

@@ -62,12 +62,15 @@ class TestHandler extends ErrorHandlingTestCase {
         $r = new \ReflectionProperty($this->handler::class, 'outputBuffer');
         $r->setAccessible(true);
         $this->assertEquals(1, count($r->getValue($this->handler)));
+        $this->assertNull($this->handler->getLastOutputThrowable());
 
         $h = $this->handler;
         $h();
-        $this->assertEquals(0, count($r->getValue($this->handler)));
+        $this->assertEquals(0, count($r->getValue($h)));
+        $this->assertSame(\Exception::class, $h->getLastOutputThrowable()['class']);
         $h();
-        $this->assertEquals(0, count($r->getValue($this->handler)));
+        $this->assertEquals(0, count($r->getValue($h)));
+        $this->assertSame(\Exception::class, $h->getLastOutputThrowable()['class']);
     }
 
     /** @dataProvider provideLogTests */
