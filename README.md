@@ -180,6 +180,7 @@ abstract class Handler {
     public const NOW = 8;
     public const OUTPUT = 16;
 
+    protected ?array $lastOutputThrowable;
     protected array $outputBuffer;
 
     // Options
@@ -256,7 +257,7 @@ Outputs the stored throwable arrays in the output buffer.
 
 #### MensBeam\Catcher\Handler::getLastOutputThrowable ####
 
-Returns the last output throwable array handled by this handler (or null if there hasn't been one).
+Returns the last output throwable array handled by this handler (or null if there hasn't been one); useful when debugging
 
 #### MensBeam\Catcher\Handler::getOption ####
 
@@ -337,12 +338,14 @@ class JSONHandler extends Handler {
     public const CONTENT_TYPE = 'application/json';
 
     protected bool $_prettyPrint = true;
+    protected bool $_prettyPrintWhenLogging = false;
 }
 ```
 
 #### Options ####
 
 _prettyPrint_: If true the handler will pretty print JSON output. Defaults to _true_.
+_prettyPrintWhenLogging_: If true the handler will pretty print JSON output when logging. Defaults to _false_.
 
 
 ### MensBeam\Catcher\PlainTextHandler ###
