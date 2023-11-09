@@ -50,6 +50,11 @@ abstract class Handler {
     protected bool $_forceOutputNow = false;
     /** The HTTP code to be sent; possible values: 200, 400-599 */
     protected int $_httpCode = 500;
+    /**
+     * An array of class strings or error codes to ignore
+     * @var int[]|string[]
+     */
+    protected array $_ignore = [];
     /** The PSR-3 compatible logger in which to log to; defaults to null (no logging) */
     protected ?LoggerInterface $_logger = null;
     /** When set to true the handler will still send logs when silent */
@@ -117,6 +122,38 @@ abstract class Handler {
     }
 
     public function handle(ThrowableController $controller): array {
+        $ignore = false;
+        if (count($this->_ignore) > 0) {
+            $throwable = $controller->getThrowable();
+            foreach ($this->_ignore as $i) {
+                if (($throwable instanceof Error && is_int($i) && $throwable->getCode() === $i) || (is_string($i) && $throwable instanceof $i)) {
+                    $ignore = true;
+                    break;
+                }
+            }
+        }
+
+        $code = 0;
+        if ($this->_bubbles) {
+            $code = self::BUBBLES;
+        }
+        if (!$ignore) {
+            if ($this->_forceExit) {
+                $code |= self::EXIT;
+            }
+            if ($this->_logger !== null && (!$this->_silent || ($this->_silent && $this->_logWhenSilent))) {
+                $code |= self::LOG;
+            }
+            if ($this->_forceOutputNow) {
+                $code |= self::NOW;
+            }
+            if (!$this->_silent) {
+                $code |= self::OUTPUT;
+            }
+        } else {
+            return [ 'code' => $code ];
+        }
+
         $output = $this->buildOutputArray($controller);
 
         if ($this->_outputBacktrace) {
@@ -124,23 +161,6 @@ abstract class Handler {
         }
         if ($this->_outputTime && $this->_timeFormat !== '') {
             $output['time'] = new \DateTimeImmutable();
-        }
-
-        $code = 0;
-        if ($this->_bubbles) {
-            $code = self::BUBBLES;
-        }
-        if ($this->_forceExit) {
-            $code |= self::EXIT;
-        }
-        if ($this->_logger !== null && (!$this->_silent || ($this->_silent && $this->_logWhenSilent))) {
-            $code |= self::LOG;
-        }
-        if ($this->_forceOutputNow) {
-            $code |= self::NOW;
-        }
-        if (!$this->_silent) {
-            $code |= self::OUTPUT;
         }
         $output['code'] = $code;
 
@@ -205,20 +225,33 @@ abstract class Handler {
             return;
         }
 
-        if (
-            $name === 'httpCode' &&
-            is_int($value) &&
-            $value !== 200 &&
-            max(400, min($value, 418)) !== $value &&
-            max(421, min($value, 429)) !== $value &&
-            $value !== 431 &&
-            $value !== 451 &&
-            max(500, min($value, 511)) !== $value &&
-            // Cloudflare extensions
-            max(520, min($value, 527)) !== $value &&
-            $value !== 530
-        ) {
-            throw new RangeException('Option "httpCode" can only be a valid HTTP 200, 4XX, or 5XX code');
+        switch ($name) {
+            case 'httpCode':
+                if (
+                    is_int($value) &&
+                    $value !== 200 &&
+                    max(400, min($value, 418)) !== $value &&
+                    max(421, min($value, 429)) !== $value &&
+                    $value !== 431 &&
+                    $value !== 451 &&
+                    max(500, min($value, 511)) !== $value &&
+                    // Cloudflare extensions
+                    max(520, min($value, 527)) !== $value &&
+                    $value !== 530
+                ) {
+                    throw new RangeException('Option "httpCode" can only be a valid HTTP 200, 4XX, or 5XX code');
+                }
+            break;
+
+            case 'ignore':
+                if (is_array($value)) {
+                    foreach ($value as $v) {
+                        if (!is_int($v) && !is_string($v)) {
+                            throw new InvalidArgumentException('Option "ignore" can only be an array of integers and/or strings');
+                        }
+                    }
+                }
+            break;
         }
 
         $name = "_$name";
@@ -254,6 +287,7 @@ abstract class Handler {
 
     protected function cleanOutputThrowable(array $outputThrowable): array {
         unset($outputThrowable['controller']);
+        unset($outputThrowable['code']);
 
         if (isset($outputThrowable['previous'])) {
             $outputThrowable['previous'] = $this->cleanOutputThrowable($outputThrowable['previous']);

@@ -17,7 +17,10 @@ use Psr\Log\LoggerInterface,
     Phake;
 
 
-/** @covers \MensBeam\Catcher\JSONHandler */
+/**
+ * @covers \MensBeam\Catcher\JSONHandler
+ * @covers \MensBeam\Catcher\Handler
+ */
 class TestJSONHandler extends \PHPUnit\Framework\TestCase {
     protected ?Handler $handler = null;
 
@@ -32,7 +35,7 @@ class TestJSONHandler extends \PHPUnit\Framework\TestCase {
     }
 
     /** @dataProvider provideInvocationTests */
-    public function testInvocation(\Throwable $throwable, bool $silent, bool $log, ?string $logMethodName, int $line): void {
+    public function testInvocation(\Throwable $throwable, bool $silent, bool $log, ?string $logMethodName, ?array $ignore, int $line): void {
         $this->handler->setOption('outputToStderr', false);
 
         if (!$silent) {
@@ -41,6 +44,9 @@ class TestJSONHandler extends \PHPUnit\Framework\TestCase {
         if ($log) {
             $l = Phake::mock(LoggerInterface::class);
             $this->handler->setOption('logger', $l);
+        }
+        if ($ignore !== null) {
+            $this->handler->setOption('ignore', $ignore);
         }
 
         $o = $this->handler->handle(new ThrowableController($throwable));
@@ -51,17 +57,20 @@ class TestJSONHandler extends \PHPUnit\Framework\TestCase {
         $h();
         $u = ob_get_clean();
 
-        if (!$silent) {
+        if (!$silent && $ignore === null) {
             $u = json_decode($u, true);
             $this->assertEquals($c, $u['class']);
             $this->assertEquals(__FILE__, $u['file']);
             $this->assertEquals($line, $u['line']);
         } else {
+            if ($ignore !== null) {
+                $this->assertNull($h->getLastOutputThrowable());
+            }
             $this->assertSame('', $u);
         }
 
         if ($log) {
-            Phake::verify($l, Phake::times(1))->$logMethodName;
+            Phake::verify($l, Phake::times((int)(count($ignore ?? []) === 0)))->$logMethodName;
         }
     }
 
@@ -83,10 +92,14 @@ class TestJSONHandler extends \PHPUnit\Framework\TestCase {
 
     public static function provideInvocationTests(): iterable {
         $options = [
-            [ new \Exception('Ook!'), false, true, 'critical' ],
-            [ new \Error('Ook!'), true, false, null ],
-            [ new Error('Ook!', \E_ERROR, __FILE__, __LINE__), false, true, 'error' ],
-            [ new \Exception(message: 'Ook!', previous: new \Error(message: 'Eek!', previous: new \ParseError('Ack!'))), true, true, 'critical' ]
+            [ new \Exception('Ook!'), false, true, 'critical', null ],
+            [ new \Exception('Ook!'), false, true, 'critical', [ \Exception::class ] ],
+            [ new \Error('Ook!'), true, false, null, null ],
+            [ new \Error('Ook!'), true, false, null, [ \Error::class ] ],
+            [ new Error('Ook!', \E_ERROR, __FILE__, __LINE__), false, true, 'error', null ],
+            [ new Error('Ook!', \E_ERROR, __FILE__, __LINE__), false, true, 'error', [ \E_ERROR ] ],
+            [ new \Exception(message: 'Ook!', previous: new \Error(message: 'Eek!', previous: new \ParseError('Ack!'))), true, true, 'critical', null ],
+            [ new \Exception(message: 'Ook!', previous: new \Error(message: 'Eek!', previous: new \ParseError('Ack!'))), true, true, 'critical', [ \Exception::class ] ]
         ];
 
         $l = count($options);

@@ -190,6 +190,7 @@ abstract class Handler {
     protected bool $_forceExit = false;
     protected bool $_forceOutputNow = false;
     protected int $_httpCode = 500;
+    protected ?array $_ignore = null;
     protected ?LoggerInterface $_logger = null;
     protected bool $_logWhenSilent = true;
     protected bool $_outputBacktrace = false;
@@ -241,6 +242,7 @@ _forceBreak_: When set this will force the stack loop to break after the handler
 _forceExit_: When set this will force an exit after all handlers have been run. Defaults to _false_.  
 _forceOutputNow_: When set this will force output of the handler immediately. Defaults to _false_.  
 _httpCode_: The HTTP code to be sent; possible values are 200, 400-599. Defaults to _500_.  
+_ignore_: An array of class strings or error codes to ignore. Defaults to _null_ (no ignoring).  
 _logger_: The PSR-3 compatible logger in which to log to. Defaults to _null_ (no logging).  
 _logWhenSilent_: When set to true the handler will still send logs when silent. Defaults to _true_.  
 _outputBacktrace_: When true will output a stack trace. Defaults to _false_.  

@@ -10,6 +10,7 @@ namespace MensBeam\Catcher\Test;
 use MensBeam\Catcher\{
     Error as CatcherError,
     Handler,
+    InvalidArgumentException,
     RangeException,
     ThrowableController
 };
@@ -62,15 +63,12 @@ class TestHandler extends ErrorHandlingTestCase {
         $r = new \ReflectionProperty($this->handler::class, 'outputBuffer');
         $r->setAccessible(true);
         $this->assertEquals(1, count($r->getValue($this->handler)));
-        $this->assertNull($this->handler->getLastOutputThrowable());
 
         $h = $this->handler;
         $h();
-        $this->assertEquals(0, count($r->getValue($h)));
-        $this->assertSame(\Exception::class, $h->getLastOutputThrowable()['class']);
+        $this->assertEquals(0, count($r->getValue($this->handler)));
         $h();
-        $this->assertEquals(0, count($r->getValue($h)));
-        $this->assertSame(\Exception::class, $h->getLastOutputThrowable()['class']);
+        $this->assertEquals(0, count($r->getValue($this->handler)));
     }
 
     /** @dataProvider provideLogTests */
@@ -159,6 +157,12 @@ class TestHandler extends ErrorHandlingTestCase {
                     $c = new Catcher();
                     $l = new FailLogger();
                     $l->error('Ook!');
+                }
+            ],
+            [
+                InvalidArgumentException::class,
+                function (Handler $h): void {
+                    $h->setOption('ignore', [ \M_PI ]);
                 }
             ]
         ];
@@ -260,6 +264,7 @@ class TestHandler extends ErrorHandlingTestCase {
             [ 'httpCode', 200 ],
             [ 'httpCode', 400 ],
             [ 'httpCode', 502 ],
+            [ 'ignore', [ \Exception::class, \E_USER_ERROR ] ],
             [ 'logger', Phake::mock(LoggerInterface::class) ],
             [ 'logWhenSilent', false ],
             [ 'outputBacktrace', true ],
