@@ -14,6 +14,8 @@ use MensBeam\Catcher,
 abstract class Handler {
     public const CONTENT_TYPE = null;
 
+    public const NON_FATAL_ERROR = \E_NOTICE | \E_USER_NOTICE | \E_STRICT | \E_WARNING | \E_COMPILE_WARNING | \E_USER_WARNING | \E_DEPRECATED | \E_USER_DEPRECATED;
+
     // Control constants
     public const BUBBLES = 1;
     public const EXIT = 2;
@@ -51,7 +53,7 @@ abstract class Handler {
     /** The HTTP code to be sent; possible values: 200, 400-599 */
     protected int $_httpCode = 500;
     /**
-     * An array of class strings or error codes to ignore
+     * An array of class strings or error code bitmasks to ignore
      * @var int[]|string[]
      */
     protected array $_ignore = [];
@@ -126,7 +128,7 @@ abstract class Handler {
         if (count($this->_ignore) > 0) {
             $throwable = $controller->getThrowable();
             foreach ($this->_ignore as $i) {
-                if (($throwable instanceof Error && is_int($i) && $throwable->getCode() === $i) || (is_string($i) && $throwable instanceof $i)) {
+                if (($throwable instanceof Error && is_int($i) && $i & $throwable->getCode()) || (is_string($i) && $throwable instanceof $i)) {
                     $ignore = true;
                     break;
                 }

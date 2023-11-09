@@ -173,6 +173,8 @@ namespace MensBeam\Catcher;
 abstract class Handler {
     public const CONTENT_TYPE = null;
 
+    public const NON_FATAL_ERROR = \E_NOTICE | \E_USER_NOTICE | \E_STRICT | \E_WARNING | \E_COMPILE_WARNING | \E_USER_WARNING | \E_DEPRECATED | \E_USER_DEPRECATED;
+
     // Control constants
     public const BUBBLES = 1;
     public const EXIT = 2;
@@ -242,7 +244,7 @@ _forceBreak_: When set this will force the stack loop to break after the handler
 _forceExit_: When set this will force an exit after all handlers have been run. Defaults to _false_.  
 _forceOutputNow_: When set this will force output of the handler immediately. Defaults to _false_.  
 _httpCode_: The HTTP code to be sent; possible values are 200, 400-599. Defaults to _500_.  
-_ignore_: An array of class strings or error codes to ignore. Defaults to _null_ (no ignoring).  
+_ignore_: An array of class strings or error code bitmasks to ignore. Defaults to _null_ (no ignoring).  
 _logger_: The PSR-3 compatible logger in which to log to. Defaults to _null_ (no logging).  
 _logWhenSilent_: When set to true the handler will still send logs when silent. Defaults to _true_.  
 _outputBacktrace_: When true will output a stack trace. Defaults to _false_.  

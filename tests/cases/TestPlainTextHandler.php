@@ -22,6 +22,8 @@ use Psr\Log\LoggerInterface,
  * @covers \MensBeam\Catcher\Handler
  */
 class TestPlainTextHandler extends \PHPUnit\Framework\TestCase {
+    use HandlerInvocationTests;
+
     protected ?Handler $handler = null;
 
 
@@ -63,7 +65,8 @@ class TestPlainTextHandler extends \PHPUnit\Framework\TestCase {
         $u = substr($u, 0, strpos($u, \PHP_EOL) ?: 0);
 
         if (!$silent && $ignore === null) {
-            $this->assertMatchesRegularExpression(sprintf('/^\[[\d:]+\]  %s: Ook\! in file %s on line %s$/', preg_quote($c, '/'), preg_quote(__FILE__, '/'), $line), $u);
+            $this->assertMatchesRegularExpression(sprintf('/^\[[\d:]+\]  %s: Ook\! in file %s on line %s$/', preg_quote($c, '/'), preg_quote((new \ReflectionClass(HandlerInvocationTests::class))->getFileName(), '/'), $line), $u);
+            $this->assertNotNull($h->getLastOutputThrowable());
         } else {
             if ($ignore !== null) {
                 $this->assertNull($h->getLastOutputThrowable());
@@ -89,24 +92,6 @@ class TestPlainTextHandler extends \PHPUnit\Framework\TestCase {
         foreach ($options as $o) {
             $o[1] |= Handler::NOW;
             yield $o;
-        }
-    }
-
-    public static function provideInvocationTests(): iterable {
-        $options = [
-            [ new \Exception('Ook!'), false, true, 'critical', null ],
-            [ new \Exception('Ook!'), false, true, 'critical', [ \Exception::class ] ],
-            [ new \Error('Ook!'), true, false, null, null ],
-            [ new \Error('Ook!'), true, false, null, [ \Error::class ] ],
-            [ new Error('Ook!', \E_ERROR, __FILE__, __LINE__), false, true, 'error', null ],
-            [ new Error('Ook!', \E_ERROR, __FILE__, __LINE__), false, true, 'error', [ \E_ERROR ] ],
-            [ new \Exception(message: 'Ook!', previous: new \Error(message: 'Eek!', previous: new \ParseError('Ack!'))), true, true, 'critical', null ],
-            [ new \Exception(message: 'Ook!', previous: new \Error(message: 'Eek!', previous: new \ParseError('Ack!'))), true, true, 'critical', [ \Exception::class ] ]
-        ];
-
-        $l = count($options);
-        foreach ($options as $k => $o) {
-            yield [ ...$o, __LINE__ - 4 - $l + $k ];
         }
     }
 }
