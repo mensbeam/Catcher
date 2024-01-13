@@ -67,8 +67,12 @@ class PlainTextHandler extends Handler {
                         if (isset($frame['errorType'])) {
                             $method = "{$frame['errorType']} ({$frame['class']})";
                         } elseif (isset($frame['function'])) {
-                            $ref = new \ReflectionMethod($frame['class'], $frame['function']);
-                            $method .= (($ref->isStatic()) ? '::' : '->') . $frame['function'] . '()';
+                            if (str_contains($frame['function'], '{closure}')) {
+                                $method = "{$frame['function']}()";
+                            } else {
+                                $ref = new \ReflectionMethod($frame['class'], $frame['function']);
+                                $method .= (($ref->isStatic()) ? '::' : '->') . $frame['function'] . '()';
+                            }
                         }
                     }
 
@@ -92,7 +96,7 @@ class PlainTextHandler extends Handler {
                 $this->log($outputThrowable['controller']->getThrowable(), $output);
             }
 
-            if (!empty($outputThrowable['time'])) {
+            if (isset($outputThrowable['time']) && $outputThrowable['time'] instanceof \DateTimeInterface) {
                 $timestamp = $outputThrowable['time']->format($this->_timeFormat) . '  ';
                 $output = ltrim(preg_replace('/^(?=\h*\S)/m', str_repeat(' ', strlen($timestamp)), "$timestamp$output"));
             }
