@@ -68,7 +68,8 @@ class PlainTextHandler extends Handler {
                             $method = "{$frame['errorType']} ({$frame['class']})";
                         } elseif (isset($frame['function'])) {
                             if (str_contains($frame['function'], '{closure}')) {
-                                $method = "{$frame['function']}()";
+                                // We have no way of automatically testing this
+                                $method = "{$frame['function']}()"; // @codeCoverageIgnore
                             } else {
                                 $ref = new \ReflectionMethod($frame['class'], $frame['function']);
                                 $method .= (($ref->isStatic()) ? '::' : '->') . $frame['function'] . '()';
@@ -83,7 +84,7 @@ class PlainTextHandler extends Handler {
                         $frame['line']
                     );
 
-                    if (isset($frame['args']) && $this->_backtraceArgFrameLimit > $key) {
+                    if (isset($frame['args']) && count($frame['args']) > 0 && $this->_backtraceArgFrameLimit > $key) {
                         $output .= preg_replace('/^/m', "$indent| ", $this->serializeArgs($frame['args'])) . \PHP_EOL;
                     }
                 }
