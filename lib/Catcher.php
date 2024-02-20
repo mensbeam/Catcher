@@ -38,12 +38,17 @@ class Catcher {
      * @var Handler[]
      */
     protected array $handlers = [];
+    /**
+     * Created when run for the first time and stores the shutdown handler;
+     * automatically disables itself when unregistered
+     */
+    protected static ?SelfSealingCallable $shutdownHandler = null;
     /** Flag set when the shutdown handler is run */
     protected bool $isShuttingDown = false;
-    /** Flag set when the class has registered error, exception, and shutdown handlers */
-    protected bool $registered = false;
     /** The last throwable handled by Catcher */
     protected ?\Throwable $lastThrowable = null;
+    /** Flag set when the class has registered error, exception, and shutdown handlers */
+    protected bool $registered = false;
 
 
 
@@ -110,7 +115,15 @@ class Catcher {
 
         set_error_handler([ $this, 'handleError' ]);
         set_exception_handler([ $this, 'handleThrowable' ]);
-        register_shutdown_function([ $this, 'handleShutdown' ]);
+
+        // Shutdown functions are fucky in php and can't be unset, so it is run in a
+        // SelfSealingCallable.
+        if (self::$shutdownHandler === null) {
+            self::$shutdownHandler = new SelfSealingCallable(fn() => $this->handleShutdown());
+            register_shutdown_function(self::$shutdownHandler);
+        }
+
+        self::$shutdownHandler->enable();
 
         $this->registered = true;
         return true;
@@ -136,6 +149,7 @@ class Catcher {
 
         restore_error_handler();
         restore_exception_handler();
+        self::$shutdownHandler->disable();
 
         // If error reporting has been set when registering and the error reporting level
         // is the same as it was when it was set then add E_ERROR back to the error

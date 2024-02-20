@@ -5,6 +5,7 @@
 [e]: https://www.php.net/manual/en/function.print-r.php
 [f]: https://github.com/symfony/var-exporter
 [g]: https://github.com/php-fig/log
+[h]: https://code.mensbeam.com/MensBeam/SelfSealingCallable
 
 # Catcher #
 
@@ -16,6 +17,7 @@ _Catcher_ uses classes called _handlers_ to handle throwables sent its way. PHP 
 ## Requirements ##
 
 * PHP >= 8.1
+* [mensbeam/self-sealing-callable][h] ^1.0
 * [psr/log][g] ^3.0
 
 
