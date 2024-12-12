@@ -175,7 +175,7 @@ namespace MensBeam\Catcher;
 abstract class Handler {
     public const CONTENT_TYPE = null;
 
-    public const NON_FATAL_ERROR = \E_NOTICE | \E_USER_NOTICE | \E_STRICT | \E_WARNING | \E_COMPILE_WARNING | \E_USER_WARNING | \E_DEPRECATED | \E_USER_DEPRECATED;
+    public const NON_FATAL_ERROR = \E_NOTICE | \E_USER_NOTICE | \E_WARNING | \E_COMPILE_WARNING | \E_USER_WARNING | \E_DEPRECATED | \E_USER_DEPRECATED;
 
     // Control constants
     public const BUBBLES = 1;

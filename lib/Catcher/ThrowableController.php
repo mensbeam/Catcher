@@ -61,9 +61,6 @@ class ThrowableController {
             case \E_COMPILE_WARNING:
                 $this->errorType = 'Compile Warning';
             break;
-            case \E_STRICT:
-                $this->errorType = 'Runtime Notice';
-            break;
             case \E_RECOVERABLE_ERROR:
                 $this->errorType = 'Recoverable Error';
             break;

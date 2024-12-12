@@ -180,6 +180,7 @@ class Catcher {
      */
     public function handleError(int $code, string $message, ?string $file = null, ?int $line = null): bool {
         if ($code && $code & error_reporting()) {
+            var_export(self::isErrorFatal($code));
             $error = new Error($message, $code, $file, $line);
             if ($this->errorHandlingMethod > self::THROW_NO_ERRORS && ($this->errorHandlingMethod === self::THROW_ALL_ERRORS || self::isErrorFatal($code)) && !$this->isShuttingDown) {
                 $this->lastThrowable = $error;
