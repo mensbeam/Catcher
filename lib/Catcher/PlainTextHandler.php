@@ -67,7 +67,7 @@ class PlainTextHandler extends Handler {
                         if (isset($frame['errorType'])) {
                             $method = "{$frame['errorType']} ({$frame['class']})";
                         } elseif (isset($frame['function'])) {
-                            if (str_contains($frame['function'], '{closure}')) {
+                            if (str_starts_with($frame['function'], '{closure')) {
                                 // We have no way of automatically testing this
                                 $method = "{$frame['function']}()"; // @codeCoverageIgnore
                             } else {
